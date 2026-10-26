@@ -1,0 +1,72 @@
+# Enso
+
+Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Tailwind e Motion.
+
+> **Enso** (円相) é o círculo zen traçado em um único gesto, deixado levemente aberto: a imperfeição é parte do desenho. É a ideia do app, hábitos sem culpa, e é o ícone dele. O nome fica em `src/lib/brand.ts`.
+
+## O que já tem (Fase 1)
+
+- **Três interações nativas de hábito**
+  - **Contar** (água): um copo com onda animada que enche a cada toque, com bolhas
+  - **Marcar** (respirar, movimento…): selo que "carimba", com nível **mínimo** e **ideal**
+  - **Acumular** (leitura, estudo): livro com páginas que viram e marcador que desce
+- **Mini-hábitos com níveis**: fazer o mínimo já conta
+- **Modo dia difícil** (ícone de folha): reduz o dia ao essencial
+- **Frases contextuais** por momento do dia, em quatro tons (gentil, estoico, direto, leve) e frase de identidade por hábito
+- **Sons de feedback** sintetizados no próprio navegador (sem arquivos, sem licença)
+- **Celebração** zen quando o dia é completado
+- **Tema claro suave e escuro sofisticado**, seguindo o sistema ou escolhido nos ajustes
+- **Histórico dos últimos 7 dias**, navegável
+- **Backup em JSON** nos ajustes
+- **PWA instalável** e funcional offline; dados ficam no aparelho (IndexedDB)
+
+## Rodar localmente
+
+```bash
+npm install
+npm run dev        # http://localhost:3000
+```
+
+Produção local (o service worker só roda em produção):
+
+```bash
+npm run build && npm start
+```
+
+## Publicar (GitHub + Vercel)
+
+```bash
+git remote add origin https://github.com/PhBros16/habito-habito.git
+git push -u origin main
+```
+
+Depois, em [vercel.com/new](https://vercel.com/new): importe o repositório. Nenhuma variável de ambiente é necessária. Cada `git push` na `main` publica sozinho.
+
+**Instalar no celular:** abra a URL no navegador e use "Adicionar à tela inicial" (iOS: Compartilhar → Adicionar à Tela de Início).
+
+> O app só guarda dados localmente (IndexedDB), então quem abrir a URL pública vê um app limpo, sem os seus dados.
+
+## Estrutura
+
+```
+src/
+  app/            layout, manifest (PWA), página
+  components/     telas, sheets, celebração, semana
+    habits/       GlassCounter · StampCheck · PagesProgress · HabitCard
+  lib/
+    types.ts      modelo de dados e níveis (mínimo/ideal)
+    db.ts         IndexedDB
+    store.tsx     estado global + persistência
+    phrases.ts    frases por momento e tom
+    sound.ts      sons com Web Audio
+    templates.ts  hábitos prontos
+public/
+  sw.js           service worker (offline)
+scripts/
+  make-icons.mjs  gera os ícones do PWA
+```
+
+## Próximas fases
+
+- **Fase 2:** estatísticas (heatmap anual, melhores dias, taxa de recuperação, correlações), rotinas com horários, notificações, empilhamento de hábitos, humor/energia
+- **Fase 3:** mixer de som ambiente (chuva + piano), retrospectiva semanal/anual, jardim vivo, pausas planejadas, diário de uma linha

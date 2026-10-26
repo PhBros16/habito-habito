@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/* ───────── Design tokens: claro suave (papel) e escuro sofisticado ───────── */
+:root,
+:root[data-theme="light"] {
+  --bg: #f4f1ea;
+  --surface: #fbf9f4;
+  --surface-2: #eeeadf;
+  --ink: #2a2925;
+  --muted: #8b867b;
+  --line: #e4ded2;
+
+  --sage: #7c9c88;
+  --water: #6aa3c2;
+  --sand: #c79f73;
+  --clay: #c47f6b;
+  --lilac: #9a8dbb;
+  --sun: #d8b45a;
+
+  --shadow: 0 1px 2px rgba(60, 50, 30, 0.04), 0 10px 32px rgba(60, 50, 30, 0.07);
+  --glow: rgba(124, 156, 136, 0.35);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #111312;
+  --surface: #191c1a;
+  --surface-2: #212522;
+  --ink: #ece8df;
+  --muted: #8d9189;
+  --line: #2a2e2b;
+
+  --sage: #9bbfa8;
+  --water: #7fb8d6;
+  --sand: #d9b88c;
+  --clay: #d99a86;
+  --lilac: #b5a9d6;
+  --sun: #e4c673;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 36px rgba(0, 0, 0, 0.35);
+  --glow: rgba(155, 191, 168, 0.25);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-sage: var(--sage);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces Variable", ui-serif, Georgia, serif;
+}
+
+/* Motion tokens */
+:root {
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 160ms;
+  --dur-base: 320ms;
+  --dur-slow: 640ms;
+}
+
+html {
+  background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
+  transition: background-color var(--dur-slow) var(--ease-soft),
+    color var(--dur-slow) var(--ease-soft);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--sage) 35%, transparent);
+}
+
+/* Utilidades */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+
+.soft-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

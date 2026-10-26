@@ -1,0 +1,58 @@
+export type HabitKind = "check" | "counter" | "progress";
+export type AccentKey = "sage" | "water" | "sand" | "clay" | "lilac" | "sun";
+export type Tone = "gentle" | "stoic" | "direct" | "humor";
+export type ThemePref = "system" | "light" | "dark";
+export type Level = 0 | 1 | 2; // 0 = nada, 1 = mínimo, 2 = ideal
+
+export interface Habit {
+  id: string;
+  name: string;
+  kind: HabitKind;
+  accent: AccentKey;
+  unit: string; // "copos", "páginas"...
+  minimum: number; // versão mínima (mini-hábito)
+  target: number; // versão ideal
+  minLabel?: string; // só para "check" com dois níveis
+  idealLabel?: string;
+  identity?: string; // "Sou alguém que lê todo dia."
+  essential: boolean; // aparece no "dia difícil"
+  createdAt: string; // ISO
+  order: number;
+  archived?: boolean;
+}
+
+export interface Entry {
+  id: string; // `${habitId}:${date}`
+  habitId: string;
+  date: string; // YYYY-MM-DD (fuso local)
+  value: number;
+}
+
+export interface Settings {
+  theme: ThemePref;
+  sound: boolean;
+  tone: Tone;
+  hardDayDate: string | null; // dia difícil vale só para a data guardada
+  seeded: boolean;
+}
+
+export const defaultSettings: Settings = {
+  theme: "system",
+  sound: true,
+  tone: "gentle",
+  hardDayDate: null,
+  seeded: false,
+};
+
+export const entryId = (habitId: string, date: string) => `${habitId}:${date}`;
+
+/** Quantos "estágios" tem um hábito de marcar (1 = simples, 2 = mínimo + ideal). */
+export function stagesOf(h: Habit): 1 | 2 {
+  return h.kind === "check" && h.minimum < h.target ? 2 : 1;
+}
+
+export function levelOf(h: Habit, value: number): Level {
+  if (value >= h.target) return 2;
+  if (value >= h.minimum && value > 0) return 1;
+  return 0;
+}

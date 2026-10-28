@@ -17,6 +17,7 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 - **Tema claro suave e escuro sofisticado**, seguindo o sistema ou escolhido nos ajustes
 - **Histórico dos últimos 7 dias**, navegável
 - **Check-in de humor e energia** (cinco rostos e três níveis, um toque cada); recolhe num resumo e dá para editar ou limpar. Em dia pesado (humor ≤ 2 ou energia baixa) as frases ficam mais acolhedoras e o app oferece deixar só o essencial
+- **Retrospectiva semanal** (segunda a domingo): dias mantidos, anéis por dia, média e comparação com a semana anterior, melhor dia, hábito mais feito, humor médio e a frase de identidade com os "votos" da semana. Um convite aparece de domingo a terça, uma vez por semana; também há um atalho nas estatísticas
 - **Backup em JSON** nos ajustes
 - **Estatísticas** (ícone de gráfico no topo), tudo calculado localmente:
   - Dias seguidos, melhor sequência e conclusão dos últimos 30 dias
@@ -59,7 +60,7 @@ Depois, em [vercel.com/new](https://vercel.com/new): importe o repositório. Nen
 ```
 src/
   app/            layout, manifest (PWA), página
-  components/     telas, sheets, celebração, semana, check-in
+  components/     telas, sheets, celebração, semana, check-in, retrospectiva
     habits/       StampCheck · NumericHabit · HabitCard
       visuals/    Glass · Book · Ring · Beads
   lib/
@@ -79,5 +80,5 @@ scripts/
 
 ## Próximas fases
 
-- **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos, retrospectiva semanal
+- **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos
 - **Fase 3:** mixer de som ambiente (chuva + piano), retrospectiva anual, jardim vivo, pausas planejadas, diário de uma linha

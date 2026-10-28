@@ -12,7 +12,8 @@ import { WeekStrip } from "./WeekStrip";
 import { Celebration } from "./Celebration";
 import { AddHabitSheet } from "./AddHabitSheet";
 import { SettingsSheet } from "./SettingsSheet";
-import { LeafIcon, PlusIcon, SlidersIcon, SoundOffIcon, SoundOnIcon } from "./icons";
+import { StatsSheet } from "./StatsSheet";
+import { ChartIcon, LeafIcon, PlusIcon, SlidersIcon, SoundOffIcon, SoundOnIcon } from "./icons";
 import { APP_NAME } from "@/lib/brand";
 
 export function App() {
@@ -47,6 +48,7 @@ function Main() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [celebrate, setCelebrate] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -118,12 +120,12 @@ function Main() {
       {/* topo */}
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-muted first-letter:uppercase">{longDate(selected)}</p>
+          <p className="whitespace-nowrap text-[13px] text-muted first-letter:uppercase">{longDate(selected)}</p>
           <h1 className="font-display mt-1 text-4xl leading-tight">
             {isToday ? greetingOf(moment) : relativeLabel(selected, today)}
           </h1>
         </div>
-        <div className="flex items-center gap-1 pt-1">
+        <div className="flex shrink-0 items-center pt-1">
           <IconButton
             label={hardDay ? "Desativar dia difícil" : "Ativar dia difícil"}
             active={hardDay}
@@ -139,6 +141,9 @@ function Main() {
             onClick={() => updateSettings({ sound: !settings.sound })}
           >
             {settings.sound ? <SoundOnIcon /> : <SoundOffIcon />}
+          </IconButton>
+          <IconButton label="Estatísticas" onClick={() => setStatsOpen(true)}>
+            <ChartIcon />
           </IconButton>
           <IconButton label="Ajustes" onClick={() => setSettingsOpen(true)}>
             <SlidersIcon />
@@ -264,6 +269,7 @@ function Main() {
       <Celebration show={celebrate !== null} phrase={celebrate ?? ""} />
       <AddHabitSheet open={addOpen} onClose={() => setAddOpen(false)} onAdd={addHabit} />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <StatsSheet open={statsOpen} onClose={() => setStatsOpen(false)} today={today} />
 
       <footer className="mt-10 text-center text-xs text-muted/70">
         {APP_NAME} · seus dados ficam só neste aparelho
@@ -290,7 +296,7 @@ function IconButton({
       aria-pressed={active}
       whileTap={{ scale: 0.88 }}
       onClick={onClick}
-      className="grid h-10 w-10 place-items-center rounded-full transition-colors"
+      className="grid h-9 w-9 place-items-center rounded-full transition-colors"
       style={{
         color: active ? "var(--sage)" : "var(--muted)",
         background: active ? "color-mix(in srgb, var(--sage) 16%, transparent)" : "transparent",

@@ -71,3 +71,8 @@ export const CheckIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="m5 12.5 4.5 4.5L19 7.5" />
   </svg>
 );
+export const ChartIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M5 20V11M12 20V5M19 20v-6" />
+  </svg>
+);

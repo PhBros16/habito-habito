@@ -9,11 +9,14 @@ import {
   correlations,
   habitStats,
   heatmap,
+  moodStats,
   overview,
   recovery,
   weekdays,
 } from "@/lib/stats";
 import { longDate } from "@/lib/dates";
+import { MOOD_LABEL } from "@/lib/checkin";
+import type { Mood } from "@/lib/types";
 
 const LETTERS = ["D", "S", "T", "Q", "Q", "S", "S"];
 const NAMES = [
@@ -76,7 +79,7 @@ function Section({
 }
 
 function StatsBody({ today }: { today: string }) {
-  const { habits, getValue } = useHabits();
+  const { habits, getValue, getCheckin } = useHabits();
 
   const data = useMemo(
     () => ({
@@ -86,10 +89,11 @@ function StatsBody({ today }: { today: string }) {
       perHabit: habitStats(habits, today, getValue),
       rec: recovery(habits, today, getValue),
       cor: correlations(habits, today, getValue),
+      mood: moodStats(habits, today, getValue, getCheckin),
     }),
-    [habits, today, getValue]
+    [habits, today, getValue, getCheckin]
   );
-  const { ov, cells, week, perHabit, rec, cor } = data;
+  const { ov, cells, week, perHabit, rec, cor, mood } = data;
 
   if (!ov.hasData) {
     return (
@@ -258,8 +262,13 @@ function StatsBody({ today }: { today: string }) {
         </div>
       </Section>
 
+      {/* humor e energia */}
+      <Section title="Humor e energia" index={4}>
+        <MoodSection mood={mood} />
+      </Section>
+
       {/* recuperação */}
-      <Section title="Como você volta" index={4}>
+      <Section title="Como você volta" index={5}>
         <div className="card p-4" style={{ borderRadius: 22 }}>
           {rec.gaps === 0 || rec.avgDays === null || rec.oneDayShare === null ? (
             <p className="text-sm leading-relaxed">
@@ -286,7 +295,7 @@ function StatsBody({ today }: { today: string }) {
       </Section>
 
       {/* padrões */}
-      <Section title="Padrões" index={5}>
+      <Section title="Padrões" index={6}>
         {cor.length === 0 ? (
           <p className="text-sm leading-relaxed text-muted">
             Os padrões entre hábitos aparecem depois de umas duas semanas de registros. Continue; eles
@@ -310,6 +319,92 @@ function StatsBody({ today }: { today: string }) {
           </div>
         )}
       </Section>
+    </div>
+  );
+}
+
+function MoodSection({ mood }: { mood: ReturnType<typeof moodStats> }) {
+  const { series, count } = mood;
+  const W = 14 * 20;
+  const x = (i: number) => i * 20 + 10;
+  const y = (m: number) => 8 + (5 - m) * 9;
+  const moodPts = series.map((p, i) => (p.mood === null ? null : { x: x(i), y: y(p.mood) }));
+  // liga só dias consecutivos; dias sem registro deixam o traço aberto
+  let path = "";
+  moodPts.forEach((p, i) => {
+    if (!p) return;
+    path += moodPts[i - 1] ? ` L${p.x} ${p.y}` : ` M${p.x} ${p.y}`;
+  });
+  const m = mood.mood;
+
+  return (
+    <div className="card flex flex-col gap-3 p-4" style={{ borderRadius: 22 }}>
+      {count === 0 ? (
+        <p className="text-sm leading-relaxed text-muted">
+          Registre como você está na tela inicial. Depois de alguns dias, mostramos aqui como o seu
+          humor e a sua energia conversam com os hábitos.
+        </p>
+      ) : (
+        <>
+          <svg viewBox={`0 0 ${W} 80`} className="h-auto w-full" role="img" aria-label="Humor e energia nos últimos 14 dias">
+            {[1, 3, 5].map((v) => (
+              <line key={v} x1={0} x2={W} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeWidth={1} strokeDasharray="2 4" />
+            ))}
+            <path d={path} fill="none" stroke={accentColor("sage")} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            {moodPts.map(
+              (p, i) =>
+                p && (
+                  <circle key={i} cx={p.x} cy={p.y} r={3.2} fill={accentColor("sage")}>
+                    <title>{`${longDate(series[i].date)}: ${MOOD_LABEL[series[i].mood as Mood]}`}</title>
+                  </circle>
+                )
+            )}
+            {series.map((p, i) =>
+              p.energy === null ? null : (
+                <rect key={i} x={x(i) - 3} y={80 - p.energy * 4} width={6} height={p.energy * 4} rx={2} fill="var(--muted)" opacity={0.45} />
+              )
+            )}
+          </svg>
+          <p className="text-[12px] text-muted">Linha: humor · barras: energia · últimos 14 dias</p>
+
+          {m === null && mood.energy.length === 0 && (
+            <p className="text-sm leading-relaxed text-muted">
+              Ainda poucos registros para tirar conclusões. Com mais alguns dias de humor, os padrões aparecem aqui.
+            </p>
+          )}
+
+          {m && (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm leading-relaxed">
+                {m.outcome === "better" && (
+                  <>
+                    Nos dias em que você está bem, faz em média{" "}
+                    <b className="font-medium" style={{ color: accentColor("sage") }}>{pct(m.highAvg)}%</b> dos hábitos.
+                    Nos dias mais pesados, {pct(m.lowAvg)}%.
+                  </>
+                )}
+                {m.outcome === "same" && (
+                  <>Seu ritmo quase não depende do humor: {pct(m.highAvg)}% nos dias bons e {pct(m.lowAvg)}% nos pesados.</>
+                )}
+                {m.outcome === "worse" && (
+                  <>Curioso: nos dias mais pesados você faz {pct(m.lowAvg)}% dos hábitos, mais que nos dias bons ({pct(m.highAvg)}%). Os hábitos parecem te ancorar.</>
+                )}
+              </p>
+              <p className="text-[13px] text-muted">
+                Mesmo nos dias mais pesados você fez ao menos um hábito em {m.lowKept} de {m.lowN}.
+              </p>
+            </div>
+          )}
+
+          {mood.energy.map((e) => (
+            <p key={e.habit.id} className="text-sm leading-relaxed">
+              <b className="font-medium">{e.habit.name}</b>:{" "}
+              {e.high > e.low ? "você faz mais" : "você faz menos"} com energia alta (
+              {pct(e.high)}%) do que com energia baixa ({pct(e.low)}%).
+            </p>
+          ))}
+        </>
+      )}
     </div>
   );
 }

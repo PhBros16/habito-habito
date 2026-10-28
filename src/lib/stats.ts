@@ -1,5 +1,5 @@
 import { addDays, dateKey, parseKey } from "./dates";
-import { levelOf, type Habit } from "./types";
+import { levelOf, type Checkin, type Habit } from "./types";
 
 export type ValueFn = (habitId: string, date: string) => number;
 
@@ -199,4 +199,99 @@ export function correlations(habits: Habit[], today: string, get: ValueFn): Corr
       return true;
     })
     .slice(0, 2);
+}
+
+// ───────────────────────── humor e energia ─────────────────────────
+
+export type CheckinFn = (date: string) => Checkin | undefined;
+
+export interface MoodPoint {
+  date: string;
+  mood: number | null;
+  energy: number | null;
+}
+
+export interface MoodInsight {
+  highN: number; // dias com humor ≥ 4
+  lowN: number; // dias com humor ≤ 2
+  highAvg: number; // conclusão média nos dias bons (0..1)
+  lowAvg: number; // conclusão média nos dias pesados (0..1)
+  lowKept: number; // dias pesados com ao menos um hábito feito
+  outcome: "better" | "same" | "worse";
+}
+
+export interface EnergyInsight {
+  habit: Habit;
+  high: number; // taxa com energia alta
+  low: number; // taxa com energia baixa
+}
+
+export interface MoodStats {
+  count: number; // check-ins registrados (qualquer campo)
+  series: MoodPoint[]; // últimos 14 dias, o mais antigo primeiro
+  mood: MoodInsight | null;
+  energy: EnergyInsight[];
+}
+
+/**
+ * Cruza humor/energia com o que foi feito. Hoje fica de fora das comparações
+ * (o dia ainda está em andamento); só aparece com dados suficientes.
+ */
+export function moodStats(
+  habits: Habit[],
+  today: string,
+  get: ValueFn,
+  checkin: CheckinFn
+): MoodStats {
+  const series: MoodPoint[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const date = addDays(today, -i);
+    const c = checkin(date);
+    series.push({ date, mood: c?.mood ?? null, energy: c?.energy ?? null });
+  }
+
+  const window = daysBetween(addDays(today, -60), addDays(today, -1));
+  let count = 0;
+  for (const d of daysBetween(addDays(today, -60), today)) {
+    const c = checkin(d);
+    if (c && (c.mood !== undefined || c.energy !== undefined)) count++;
+  }
+
+  const ratioOn = (d: string) => dayRatio(habits, d, get);
+  const high = window.filter((d) => (checkin(d)?.mood ?? 0) >= 4 && ratioOn(d) !== null);
+  const low = window.filter((d) => {
+    const m = checkin(d)?.mood;
+    return m !== undefined && m <= 2 && ratioOn(d) !== null;
+  });
+  const avg = (days: string[]) =>
+    days.reduce((s, d) => s + (ratioOn(d) ?? 0), 0) / days.length;
+
+  let mood: MoodInsight | null = null;
+  if (high.length >= 4 && low.length >= 3) {
+    const highAvg = avg(high);
+    const lowAvg = avg(low);
+    const diff = highAvg - lowAvg;
+    mood = {
+      highN: high.length,
+      lowN: low.length,
+      highAvg,
+      lowAvg,
+      lowKept: low.filter((d) => (ratioOn(d) ?? 0) > 0).length,
+      outcome: diff >= 0.15 ? "better" : diff <= -0.15 ? "worse" : "same",
+    };
+  }
+
+  const energy: EnergyInsight[] = [];
+  for (const h of habits) {
+    const days = window.filter((d) => activeOn(h, d));
+    const hi = days.filter((d) => checkin(d)?.energy === 3);
+    const lo = days.filter((d) => checkin(d)?.energy === 1);
+    if (hi.length < 4 || lo.length < 4) continue;
+    const pHi = hi.filter((d) => isDone(h, d, get)).length / hi.length;
+    const pLo = lo.filter((d) => isDone(h, d, get)).length / lo.length;
+    if (Math.abs(pHi - pLo) >= 0.25) energy.push({ habit: h, high: pHi, low: pLo });
+  }
+  energy.sort((a, b) => Math.abs(b.high - b.low) - Math.abs(a.high - a.low));
+
+  return { count, series, mood, energy: energy.slice(0, 2) };
 }

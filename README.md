@@ -13,6 +13,7 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 - **Modo dia difícil** (ícone de folha): reduz o dia ao essencial
 - **Frases contextuais** por momento do dia, em quatro tons (gentil, estoico, direto, leve) e frase de identidade por hábito
 - **Sons de feedback** sintetizados no próprio navegador (sem arquivos, sem licença)
+- **Som ambiente** (ícone de ondas no topo): mixer com chuva, vento, ondas e um piano generativo (notas de uma escala pentatônica com reverb), quatro predefinições, volume por camada e timer para desligar sozinho com fade. Tudo gerado no aparelho, offline; os volumes ficam salvos e o som nunca começa sozinho
 - **Celebração** zen quando o dia é completado
 - **Tema claro suave e escuro sofisticado**, seguindo o sistema ou escolhido nos ajustes
 - **Histórico dos últimos 7 dias**, navegável
@@ -70,7 +71,8 @@ src/
     db.ts         IndexedDB (v2: hábitos, registros, ajustes, check-ins)
     store.tsx     estado global + persistência
     phrases.ts    frases por momento e tom
-    sound.ts      sons com Web Audio
+    sound.ts      sons de feedback com Web Audio
+    ambient.ts    mixer de som ambiente (chuva, vento, ondas, piano)
     templates.ts  hábitos prontos
 public/
   sw.js           service worker (offline)
@@ -81,4 +83,4 @@ scripts/
 ## Próximas fases
 
 - **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos
-- **Fase 3:** mixer de som ambiente (chuva + piano), retrospectiva anual, jardim vivo, pausas planejadas, diário de uma linha
+- **Fase 3:** retrospectiva anual, jardim vivo, pausas planejadas, diário de uma linha

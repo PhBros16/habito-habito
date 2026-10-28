@@ -16,6 +16,7 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 - **Celebração** zen quando o dia é completado
 - **Tema claro suave e escuro sofisticado**, seguindo o sistema ou escolhido nos ajustes
 - **Histórico dos últimos 7 dias**, navegável
+- **Check-in de humor e energia** (cinco rostos e três níveis, um toque cada); recolhe num resumo e dá para editar ou limpar. Em dia pesado (humor ≤ 2 ou energia baixa) as frases ficam mais acolhedoras e o app oferece deixar só o essencial
 - **Backup em JSON** nos ajustes
 - **Estatísticas** (ícone de gráfico no topo), tudo calculado localmente:
   - Dias seguidos, melhor sequência e conclusão dos últimos 30 dias
@@ -23,6 +24,7 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
   - Seu dia da semana mais forte
   - Sequência, melhor marca e taxa por hábito
   - **Taxa de recuperação**: quão rápido você volta depois de um dia em branco
+  - **Humor e energia**: gráfico dos últimos 14 dias e o que muda no seu ritmo (só com dados suficientes)
   - **Padrões** entre hábitos ("nos dias em que você faz A, faz B em X% das vezes"), só com dados suficientes
 - **PWA instalável** e funcional offline; dados ficam no aparelho (IndexedDB)
 
@@ -57,13 +59,14 @@ Depois, em [vercel.com/new](https://vercel.com/new): importe o repositório. Nen
 ```
 src/
   app/            layout, manifest (PWA), página
-  components/     telas, sheets, celebração, semana
+  components/     telas, sheets, celebração, semana, check-in
     habits/       StampCheck · NumericHabit · HabitCard
       visuals/    Glass · Book · Ring · Beads
   lib/
     types.ts      modelo de dados e níveis (mínimo/ideal)
     stats.ts      sequências, mapa de calor, recuperação e padrões
-    db.ts         IndexedDB
+    checkin.ts    rótulos e regra de "dia pesado"
+    db.ts         IndexedDB (v2: hábitos, registros, ajustes, check-ins)
     store.tsx     estado global + persistência
     phrases.ts    frases por momento e tom
     sound.ts      sons com Web Audio
@@ -76,5 +79,5 @@ scripts/
 
 ## Próximas fases
 
-- **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos, humor/energia, retrospectiva semanal
+- **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos, retrospectiva semanal
 - **Fase 3:** mixer de som ambiente (chuva + piano), retrospectiva anual, jardim vivo, pausas planejadas, diário de uma linha

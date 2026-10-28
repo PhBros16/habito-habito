@@ -18,6 +18,13 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 - **Tema claro suave e escuro sofisticado**, seguindo o sistema ou escolhido nos ajustes
 - **Histórico dos últimos 7 dias**, navegável
 - **Backup em JSON** nos ajustes
+- **Estatísticas** (ícone de gráfico no topo), tudo calculado localmente:
+  - Dias seguidos, melhor sequência e conclusão dos últimos 30 dias
+  - Mapa de calor das últimas 18 semanas
+  - Seu dia da semana mais forte
+  - Sequência, melhor marca e taxa por hábito
+  - **Taxa de recuperação**: quão rápido você volta depois de um dia em branco
+  - **Padrões** entre hábitos ("nos dias em que você faz A, faz B em X% das vezes"), só com dados suficientes
 - **PWA instalável** e funcional offline; dados ficam no aparelho (IndexedDB)
 
 ## Rodar localmente
@@ -55,6 +62,7 @@ src/
     habits/       GlassCounter · StampCheck · PagesProgress · HabitCard
   lib/
     types.ts      modelo de dados e níveis (mínimo/ideal)
+    stats.ts      sequências, mapa de calor, recuperação e padrões
     db.ts         IndexedDB
     store.tsx     estado global + persistência
     phrases.ts    frases por momento e tom
@@ -68,5 +76,5 @@ scripts/
 
 ## Próximas fases
 
-- **Fase 2:** estatísticas (heatmap anual, melhores dias, taxa de recuperação, correlações), rotinas com horários, notificações, empilhamento de hábitos, humor/energia
-- **Fase 3:** mixer de som ambiente (chuva + piano), retrospectiva semanal/anual, jardim vivo, pausas planejadas, diário de uma linha
+- **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos, humor/energia, retrospectiva semanal
+- **Fase 3:** mixer de som ambiente (chuva + piano), retrospectiva anual, jardim vivo, pausas planejadas, diário de uma linha

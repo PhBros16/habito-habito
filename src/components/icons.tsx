@@ -76,3 +76,9 @@ export const ChartIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="M5 20V11M12 20V5M19 20v-6" />
   </svg>
 );
+
+export const WaveIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2" />
+  </svg>
+);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "motion/react";
 import { HabitsProvider, useHabits } from "@/lib/store";
 import { dateKey, greetingOf, lastDays, longDate, momentOf, parseKey, relativeLabel } from "@/lib/dates";
@@ -14,10 +14,12 @@ import { AddHabitSheet } from "./AddHabitSheet";
 import { SettingsSheet } from "./SettingsSheet";
 import { StatsSheet } from "./StatsSheet";
 import { WeekReviewSheet } from "./WeekReviewSheet";
+import { AmbientSheet } from "./AmbientSheet";
+import { isPlaying, subscribe } from "@/lib/ambient";
 import { reviewWeekStart } from "@/lib/stats";
 import { CheckIn } from "./CheckIn";
 import { isLowDay } from "@/lib/checkin";
-import { ChartIcon, LeafIcon, PlusIcon, SlidersIcon, SoundOffIcon, SoundOnIcon } from "./icons";
+import { ChartIcon, LeafIcon, PlusIcon, SlidersIcon, WaveIcon } from "./icons";
 import { APP_NAME } from "@/lib/brand";
 
 export function App() {
@@ -55,6 +57,8 @@ function Main() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [ambientOpen, setAmbientOpen] = useState(false);
+  const ambientOn = useSyncExternalStore(subscribe, isPlaying, () => false);
   const [celebrate, setCelebrate] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -151,11 +155,8 @@ function Main() {
           >
             <LeafIcon />
           </IconButton>
-          <IconButton
-            label={settings.sound ? "Desligar sons" : "Ligar sons"}
-            onClick={() => updateSettings({ sound: !settings.sound })}
-          >
-            {settings.sound ? <SoundOnIcon /> : <SoundOffIcon />}
+          <IconButton label="Som ambiente" active={ambientOn} onClick={() => setAmbientOpen(true)}>
+            <WaveIcon />
           </IconButton>
           <IconButton label="Estatísticas" onClick={() => setStatsOpen(true)}>
             <ChartIcon />
@@ -375,6 +376,7 @@ function Main() {
           setReviewOpen(true);
         }}
       />
+      <AmbientSheet open={ambientOpen} onClose={() => setAmbientOpen(false)} />
       <WeekReviewSheet open={reviewOpen} onClose={() => setReviewOpen(false)} weekStart={reviewStart} />
 
       <footer className="mt-10 text-center text-xs text-muted/70">

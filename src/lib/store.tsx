@@ -14,8 +14,11 @@ import { SEED_KEYS, TEMPLATES, type HabitTemplate } from "./templates";
 import {
   defaultSettings,
   entryId,
+  type Checkin,
+  type Energy,
   type Entry,
   type Habit,
+  type Mood,
   type Settings,
 } from "./types";
 
@@ -29,6 +32,9 @@ interface Ctx {
   settings: Settings;
   updateSettings: (patch: Partial<Settings>) => void;
   exportJson: () => string;
+  getCheckin: (date: string) => Checkin | undefined;
+  /** `null` apaga o campo; omitir deixa como está. */
+  setCheckin: (date: string, patch: { mood?: Mood | null; energy?: Energy | null }) => void;
 }
 
 const HabitsContext = createContext<Ctx | null>(null);
@@ -43,6 +49,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [entries, setEntries] = useState<Record<string, Entry>>({});
   const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [checkins, setCheckins] = useState<Record<string, Checkin>>({});
 
   // Carrega do IndexedDB (e semeia os hábitos iniciais na primeira abertura).
   useEffect(() => {
@@ -69,6 +76,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setHabits(loadedHabits);
         setEntries(Object.fromEntries(data.entries.map((e) => [e.id, e])));
+        setCheckins(Object.fromEntries(data.checkins.map((c) => [c.date, c])));
         setSettings(loadedSettings);
       } catch {
         /* IndexedDB indisponível (modo privado em alguns navegadores): segue em memória */
@@ -148,6 +156,34 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const getCheckin = useCallback((date: string) => checkins[date], [checkins]);
+
+  const setCheckin = useCallback(
+    (date: string, patch: { mood?: Mood | null; energy?: Energy | null }) => {
+      setCheckins((prev) => {
+        const next: Checkin = { ...(prev[date] ?? { date }) };
+        if ("mood" in patch) {
+          if (patch.mood == null) delete next.mood;
+          else next.mood = patch.mood;
+        }
+        if ("energy" in patch) {
+          if (patch.energy == null) delete next.energy;
+          else next.energy = patch.energy;
+        }
+        const out = { ...prev };
+        if (next.mood === undefined && next.energy === undefined) {
+          delete out[date];
+          store.deleteCheckin(date).catch(() => {});
+        } else {
+          out[date] = next;
+          store.saveCheckin(next).catch(() => {});
+        }
+        return out;
+      });
+    },
+    []
+  );
+
   const exportJson = useCallback(
     () =>
       JSON.stringify(
@@ -156,12 +192,13 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
           exportedAt: new Date().toISOString(),
           habits,
           entries: Object.values(entries),
+          checkins: Object.values(checkins),
           settings,
         },
         null,
         2
       ),
-    [habits, entries, settings]
+    [habits, entries, checkins, settings]
   );
 
   const sorted = useMemo(
@@ -180,8 +217,10 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       settings,
       updateSettings,
       exportJson,
+      getCheckin,
+      setCheckin,
     }),
-    [ready, sorted, getValue, setValue, addHabit, removeHabit, settings, updateSettings, exportJson]
+    [ready, sorted, getValue, setValue, addHabit, removeHabit, settings, updateSettings, exportJson, getCheckin, setCheckin]
   );
 
   return <HabitsContext.Provider value={value}>{children}</HabitsContext.Provider>;

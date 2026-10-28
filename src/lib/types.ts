@@ -5,6 +5,16 @@ export type Tone = "gentle" | "stoic" | "direct" | "humor";
 export type ThemePref = "system" | "light" | "dark";
 export type Level = 0 | 1 | 2; // 0 = nada, 1 = mínimo, 2 = ideal
 
+export type Mood = 1 | 2 | 3 | 4 | 5; // 1 = muito mal … 5 = muito bem
+export type Energy = 1 | 2 | 3; // 1 = baixa, 3 = alta
+
+/** Check-in do dia: um toque para humor e um para energia. */
+export interface Checkin {
+  date: string; // YYYY-MM-DD (fuso local)
+  mood?: Mood;
+  energy?: Energy;
+}
+
 export interface Habit {
   id: string;
   name: string;
@@ -35,6 +45,7 @@ export interface Settings {
   sound: boolean;
   tone: Tone;
   hardDayDate: string | null; // dia difícil vale só para a data guardada
+  offerDismissedDate: string | null; // dia em que a oferta de "só o essencial" foi dispensada
   seeded: boolean;
 }
 
@@ -43,6 +54,7 @@ export const defaultSettings: Settings = {
   sound: true,
   tone: "gentle",
   hardDayDate: null,
+  offerDismissedDate: null,
   seeded: false,
 };
 

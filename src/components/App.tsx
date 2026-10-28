@@ -13,6 +13,8 @@ import { Celebration } from "./Celebration";
 import { AddHabitSheet } from "./AddHabitSheet";
 import { SettingsSheet } from "./SettingsSheet";
 import { StatsSheet } from "./StatsSheet";
+import { CheckIn } from "./CheckIn";
+import { isLowDay } from "@/lib/checkin";
 import { ChartIcon, LeafIcon, PlusIcon, SlidersIcon, SoundOffIcon, SoundOnIcon } from "./icons";
 import { APP_NAME } from "@/lib/brand";
 
@@ -33,7 +35,8 @@ function Home() {
 }
 
 function Main() {
-  const { habits, getValue, setValue, addHabit, removeHabit, settings, updateSettings } = useHabits();
+  const { habits, getValue, setValue, addHabit, removeHabit, settings, updateSettings, getCheckin } =
+    useHabits();
   const fb = useFeedback();
 
   // "hoje" acompanha a virada do dia mesmo com o app aberto
@@ -78,11 +81,15 @@ function Main() {
   const doneCount = visible.filter((h) => levelOf(h, getValue(h.id, selected)) >= 1).length;
 
   const moment = momentOf();
+  // Em dia pesado (humor ou energia baixos) as frases ficam mais acolhedoras.
+  const lowDay = isLowDay(getCheckin(today));
+  const offerOpen =
+    isToday && lowDay && !hardDay && essentials.length > 0 && settings.offerDismissedDate !== today;
   const phrase = useMemo(() => {
     if (!isToday) return "";
-    if (hardDay) return phraseFor(settings.tone, "hardDay", today);
+    if (hardDay || lowDay) return phraseFor(settings.tone, "hardDay", today);
     return phraseFor(settings.tone, moment, today);
-  }, [isToday, hardDay, settings.tone, moment, today]);
+  }, [isToday, hardDay, lowDay, settings.tone, moment, today]);
 
   const showToast = (text: string) => {
     const id = ++toastSeq.current;
@@ -191,6 +198,51 @@ function Main() {
           onSelect={(d) => setPicked(d === today ? null : d)}
         />
       </div>
+
+      {/* check-in de humor e energia */}
+      <div className="mt-5">
+        <CheckIn key={selected} date={selected} isToday={isToday} />
+      </div>
+
+      {/* oferta gentil em dia pesado */}
+      <AnimatePresence>
+        {offerOpen && (
+          <motion.div
+            key="offer"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="card p-4" style={{ borderRadius: 24, boxShadow: "none" }}>
+              <p className="text-sm leading-relaxed">
+                Dia pesado? Posso deixar só o essencial por hoje. Fazer menos também é fazer.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateSettings({ hardDayDate: today });
+                    showToast("Modo dia difícil: só o essencial hoje.");
+                  }}
+                  className="flex-1 rounded-full py-2.5 text-sm font-medium"
+                  style={{ background: "var(--ink)", color: "var(--bg)" }}
+                >
+                  Só o essencial
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateSettings({ offerDismissedDate: today })}
+                  className="rounded-full border border-line px-4 py-2.5 text-sm text-muted"
+                >
+                  Agora não
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* resumo */}
       <div className="mt-5 flex items-center justify-between px-1 text-sm text-muted">

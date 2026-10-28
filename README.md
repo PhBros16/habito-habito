@@ -6,10 +6,9 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 
 ## O que já tem (Fase 1)
 
-- **Três interações nativas de hábito**
-  - **Contar** (água): um copo com onda animada que enche a cada toque, com bolhas
+- **Interações nativas de hábito**
+  - **Contar e acumular**, com quatro visuais à escolha (e uma miniatura ao vivo no formulário): **copo** (onda que enche, com bolhas), **livro** aberto (a pilha de páginas lidas engrossa e uma página vira a cada toque), **anel** que se fecha e **contas** que se acendem. Todos marcam o nível mínimo.
   - **Marcar** (respirar, movimento…): selo que "carimba", com nível **mínimo** e **ideal**
-  - **Acumular** (leitura, estudo): livro com páginas que viram e marcador que desce
 - **Mini-hábitos com níveis**: fazer o mínimo já conta
 - **Modo dia difícil** (ícone de folha): reduz o dia ao essencial
 - **Frases contextuais** por momento do dia, em quatro tons (gentil, estoico, direto, leve) e frase de identidade por hábito
@@ -59,7 +58,8 @@ Depois, em [vercel.com/new](https://vercel.com/new): importe o repositório. Nen
 src/
   app/            layout, manifest (PWA), página
   components/     telas, sheets, celebração, semana
-    habits/       GlassCounter · StampCheck · PagesProgress · HabitCard
+    habits/       StampCheck · NumericHabit · HabitCard
+      visuals/    Glass · Book · Ring · Beads
   lib/
     types.ts      modelo de dados e níveis (mínimo/ideal)
     stats.ts      sequências, mapa de calor, recuperação e padrões

@@ -4,14 +4,20 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Sheet } from "./Sheet";
 import { accentColor, accentSoft } from "./habits/shared";
+import { VISUALS, VISUAL_ORDER, previewHabit } from "./habits/visuals";
 import { TEMPLATES, type HabitTemplate } from "@/lib/templates";
-import type { AccentKey, HabitKind } from "@/lib/types";
+import type { AccentKey, HabitKind, VisualKey } from "@/lib/types";
 
 const ACCENTS: AccentKey[] = ["sage", "water", "sand", "clay", "lilac", "sun"];
 const KINDS: { kind: HabitKind; name: string; hint: string }[] = [
   { kind: "check", name: "Marcar", hint: "Feito / não feito" },
   { kind: "counter", name: "Contar", hint: "Copos, vezes…" },
   { kind: "progress", name: "Acumular", hint: "Páginas, minutos…" },
+];
+const IDENTITY_IDEAS = [
+  "Sou alguém que se cuida.",
+  "Sou alguém que aprende sempre.",
+  "Sou alguém que cumpre o que combina.",
 ];
 
 interface Props {
@@ -74,10 +80,52 @@ export function AddHabitSheet({ open, onClose, onAdd }: Props) {
   );
 }
 
+/** Miniatura viva de um visual (o mesmo componente do cartão, em escala reduzida). */
+function VisualTile({
+  visual,
+  accent,
+  selected,
+  onPick,
+}: {
+  visual: VisualKey;
+  accent: AccentKey;
+  selected: boolean;
+  onPick: () => void;
+}) {
+  const { name, Component } = VISUALS[visual];
+  const habit = previewHabit(accent);
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      aria-pressed={selected}
+      aria-label={`Visual: ${name}`}
+      className="flex flex-col items-center gap-1.5 rounded-2xl border px-1 pb-2 pt-3 transition-colors"
+      style={{
+        borderColor: selected ? "var(--sage)" : "var(--line)",
+        background: selected ? accentSoft("sage", 12) : "transparent",
+      }}
+    >
+      <span className="block overflow-hidden" style={{ width: 56, height: 62 }}>
+        <span
+          className="flex items-center justify-center"
+          style={{ width: 112, height: 124, transform: "scale(0.5)", transformOrigin: "top left" }}
+        >
+          <Component habit={habit} value={6} frac={0.6} bursts={[]} onBurstDone={() => {}} />
+        </span>
+      </span>
+      <span className="text-[12px]" style={{ color: selected ? "var(--ink)" : "var(--muted)" }}>
+        {name}
+      </span>
+    </button>
+  );
+}
+
 function CustomForm({ onSubmit }: { onSubmit: (h: HabitTemplate) => void }) {
   const [name, setName] = useState("");
   const [kind, setKind] = useState<HabitKind>("check");
   const [accent, setAccent] = useState<AccentKey>("sage");
+  const [visualPick, setVisualPick] = useState<VisualKey | null>(null);
   const [unit, setUnit] = useState("vezes");
   const [minimum, setMinimum] = useState(1);
   const [target, setTarget] = useState(5);
@@ -87,7 +135,9 @@ function CustomForm({ onSubmit }: { onSubmit: (h: HabitTemplate) => void }) {
   const [essential, setEssential] = useState(false);
   const [identity, setIdentity] = useState("");
 
-  const valid = name.trim().length > 0 && (kind === "check" || (target >= 1 && minimum >= 1 && minimum <= target));
+  const visual: VisualKey = visualPick ?? (kind === "counter" ? "glass" : "ring");
+  const valid =
+    name.trim().length > 0 && (kind === "check" || (target >= 1 && minimum >= 1 && minimum <= target));
 
   const submit = () => {
     if (!valid) return;
@@ -108,7 +158,7 @@ function CustomForm({ onSubmit }: { onSubmit: (h: HabitTemplate) => void }) {
         idealLabel: twoLevels ? idealLabel.trim() || "Versão ideal" : undefined,
       });
     } else {
-      onSubmit({ ...base, unit: unit.trim() || "un", minimum, target });
+      onSubmit({ ...base, visual, unit: unit.trim() || "un", minimum, target });
     }
   };
 
@@ -160,20 +210,37 @@ function CustomForm({ onSubmit }: { onSubmit: (h: HabitTemplate) => void }) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-2">
-          <label className="flex flex-col gap-1.5 text-sm text-muted">
-            Unidade
-            <input className={field} value={unit} onChange={(e) => setUnit(e.target.value)} maxLength={12} />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm text-muted">
-            Mínimo
-            <input className={field} type="number" inputMode="numeric" min={1} value={minimum} onChange={(e) => setMinimum(Number(e.target.value))} />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm text-muted">
-            Meta
-            <input className={field} type="number" inputMode="numeric" min={1} value={target} onChange={(e) => setTarget(Number(e.target.value))} />
-          </label>
-        </div>
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            <label className="flex flex-col gap-1.5 text-sm text-muted">
+              Unidade
+              <input className={field} value={unit} onChange={(e) => setUnit(e.target.value)} maxLength={12} />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm text-muted">
+              Mínimo
+              <input className={field} type="number" inputMode="numeric" min={1} value={minimum} onChange={(e) => setMinimum(Number(e.target.value))} />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm text-muted">
+              Meta
+              <input className={field} type="number" inputMode="numeric" min={1} value={target} onChange={(e) => setTarget(Number(e.target.value))} />
+            </label>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-muted">Como ele aparece</span>
+            <div className="grid grid-cols-4 gap-2">
+              {VISUAL_ORDER.map((v) => (
+                <VisualTile
+                  key={v}
+                  visual={v}
+                  accent={accent}
+                  selected={visual === v}
+                  onPick={() => setVisualPick(v)}
+                />
+              ))}
+            </div>
+          </div>
+        </>
       )}
 
       <div className="flex gap-3">
@@ -193,10 +260,34 @@ function CustomForm({ onSubmit }: { onSubmit: (h: HabitTemplate) => void }) {
         ))}
       </div>
 
-      <label className="flex flex-col gap-1.5 text-sm text-muted">
-        Frase de identidade (opcional)
-        <input className={field} value={identity} onChange={(e) => setIdentity(e.target.value)} placeholder="Sou alguém que…" maxLength={70} />
-      </label>
+      <div className="flex flex-col gap-2">
+        <label className="flex flex-col gap-1.5 text-sm text-muted">
+          Quem você está se tornando? (opcional)
+          <input
+            className={field}
+            value={identity}
+            onChange={(e) => setIdentity(e.target.value)}
+            placeholder="Sou alguém que…"
+            maxLength={70}
+          />
+        </label>
+        <p className="text-[12px] leading-snug text-muted">
+          Aparece embaixo do nome do hábito, como lembrete de quem você quer ser. Quem se vê assim
+          mantém o hábito com mais facilidade.
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {IDENTITY_IDEAS.map((idea) => (
+            <button
+              key={idea}
+              type="button"
+              onClick={() => setIdentity(idea)}
+              className="rounded-full border border-line px-3 py-1.5 text-[12px] text-muted"
+            >
+              {idea}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <label className="flex items-center gap-3 text-sm">
         <input type="checkbox" checked={essential} onChange={(e) => setEssential(e.target.checked)} className="h-4 w-4 accent-[var(--sage)]" />

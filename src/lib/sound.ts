@@ -72,7 +72,7 @@ function noise(at: number, dur: number, opts: { freq: number; to?: number; q?: n
   src.start(t);
 }
 
-export type SoundName = "plink" | "drain" | "stamp" | "stamp2" | "unstamp" | "page" | "tick" | "chime";
+export type SoundName = "plink" | "drain" | "stamp" | "stamp2" | "unstamp" | "page" | "tick" | "pop" | "chime";
 
 const SOUNDS: Record<SoundName, () => void> = {
   // gota d'água
@@ -96,6 +96,11 @@ const SOUNDS: Record<SoundName, () => void> = {
   // folha virando
   page: () => noise(0, 0.22, { freq: 1200, to: 3800, q: 0.9, gain: 0.09 }),
   tick: () => blip(900, 0, 0.05, { type: "triangle", gain: 0.06 }),
+  // bolinha estourando suave
+  pop: () => {
+    blip(380, 0, 0.1, { to: 760, gain: 0.09 });
+    blip(1140, 0.04, 0.08, { gain: 0.03 });
+  },
   // celebração do dia: arpejo pentatônico suave
   chime: () => {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>

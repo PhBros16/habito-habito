@@ -1,4 +1,5 @@
 export type HabitKind = "check" | "counter" | "progress";
+export type VisualKey = "glass" | "book" | "ring" | "beads";
 export type AccentKey = "sage" | "water" | "sand" | "clay" | "lilac" | "sun";
 export type Tone = "gentle" | "stoic" | "direct" | "humor";
 export type ThemePref = "system" | "light" | "dark";
@@ -9,6 +10,7 @@ export interface Habit {
   name: string;
   kind: HabitKind;
   accent: AccentKey;
+  visual?: VisualKey; // só para contar/acumular; ausente = padrão do tipo
   unit: string; // "copos", "páginas"...
   minimum: number; // versão mínima (mini-hábito)
   target: number; // versão ideal
@@ -45,6 +47,11 @@ export const defaultSettings: Settings = {
 };
 
 export const entryId = (habitId: string, date: string) => `${habitId}:${date}`;
+
+/** Visual padrão de um hábito numérico (hábitos antigos não têm o campo). */
+export function visualOf(h: Habit): VisualKey {
+  return h.visual ?? (h.kind === "counter" ? "glass" : "book");
+}
 
 /** Quantos "estágios" tem um hábito de marcar (1 = simples, 2 = mínimo + ideal). */
 export function stagesOf(h: Habit): 1 | 2 {

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { DotsIcon } from "@/components/icons";
 import type { Habit } from "@/lib/types";
-import { GlassCounter } from "./GlassCounter";
-import { PagesProgress } from "./PagesProgress";
+import { NumericHabit } from "./NumericHabit";
 import { StampCheck } from "./StampCheck";
 import { accentColor } from "./shared";
 
@@ -19,8 +18,23 @@ interface Props {
 
 export function HabitCard({ habit, value, onChange, onRemove, readOnly }: Props) {
   const [menu, setMenu] = useState(false);
-  const View =
-    habit.kind === "counter" ? GlassCounter : habit.kind === "progress" ? PagesProgress : StampCheck;
+  const menuRef = useRef<HTMLDivElement>(null);
+  const View = habit.kind === "check" ? StampCheck : NumericHabit;
+
+  // o menu fecha ao tocar fora dele ou com Esc
+  useEffect(() => {
+    if (!menu) return;
+    const onDown = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenu(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenu(false);
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menu]);
 
   return (
     <motion.article
@@ -49,10 +63,11 @@ export function HabitCard({ habit, value, onChange, onRemove, readOnly }: Props)
             <p className="mt-1 text-[13px] italic text-muted">{habit.identity}</p>
           )}
         </div>
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             type="button"
             aria-label="Mais opções"
+            aria-expanded={menu}
             onClick={() => setMenu((m) => !m)}
             className="grid h-8 w-8 place-items-center rounded-full text-muted hover:bg-surface-2"
           >

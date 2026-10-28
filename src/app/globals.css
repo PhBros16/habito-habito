@@ -77,11 +77,14 @@ body {
     color var(--dur-slow) var(--ease-soft);
 }
 
-button {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  touch-action: manipulation;
+/* Em @layer base para as classes utilitárias (text-sm, text-muted…) vencerem. */
+@layer base {
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
 }
 
 :focus-visible {

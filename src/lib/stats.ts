@@ -295,3 +295,103 @@ export function moodStats(
 
   return { count, series, mood, energy: energy.slice(0, 2) };
 }
+
+// ───────────────────────── retrospectiva semanal ─────────────────────────
+
+/** Segunda-feira da semana (segunda a domingo) que contém a data. */
+export function mondayOf(date: string): string {
+  const dow = parseKey(date).getDay(); // 0 = domingo
+  return addDays(date, -((dow + 6) % 7));
+}
+
+/**
+ * Semana que a retrospectiva mostra: no domingo, a semana que está fechando;
+ * nos outros dias, a última semana completa.
+ */
+export function reviewWeekStart(today: string): string {
+  const m = mondayOf(today);
+  return parseKey(today).getDay() === 0 ? m : addDays(m, -7);
+}
+
+export interface WeekDay {
+  date: string;
+  ratio: number | null;
+  mood: number | null;
+}
+
+export interface WeekReview {
+  start: string;
+  end: string;
+  days: WeekDay[];
+  activeDays: number; // dias da semana com algum hábito existindo
+  keptDays: number; // dias com ao menos um hábito feito
+  fullDays: number; // dias com todos os hábitos feitos
+  avg: number | null; // conclusão média (0..1)
+  prevAvg: number | null; // da semana anterior
+  bestDay: string | null;
+  topHabit: { habit: Habit; days: number; of: number } | null;
+  moodAvg: number | null; // só com ≥ 3 registros
+  energyAvg: number | null;
+  identity: { text: string; days: number } | null;
+}
+
+export function weekReview(
+  habits: Habit[],
+  start: string,
+  get: ValueFn,
+  checkin: CheckinFn
+): WeekReview {
+  const dates = daysBetween(start, addDays(start, 6));
+  const days: WeekDay[] = dates.map((date) => ({
+    date,
+    ratio: dayRatio(habits, date, get),
+    mood: checkin(date)?.mood ?? null,
+  }));
+  const active = days.filter((d) => d.ratio !== null);
+  const avgOf = (list: WeekDay[]) =>
+    list.length ? list.reduce((s, d) => s + (d.ratio ?? 0), 0) / list.length : null;
+
+  const prev = daysBetween(addDays(start, -7), addDays(start, -1))
+    .map((date) => ({ date, ratio: dayRatio(habits, date, get), mood: null }))
+    .filter((d) => d.ratio !== null);
+
+  let bestDay: string | null = null;
+  let bestRatio = 0;
+  for (const d of days) {
+    if ((d.ratio ?? 0) > bestRatio) {
+      bestRatio = d.ratio ?? 0;
+      bestDay = d.date;
+    }
+  }
+
+  const perHabit = habits
+    .map((habit) => {
+      const on = dates.filter((d) => activeOn(habit, d));
+      return { habit, of: on.length, days: on.filter((d) => isDone(habit, d, get)).length };
+    })
+    .filter((h) => h.of > 0 && h.days > 0);
+  const byDays = (a: (typeof perHabit)[number], b: (typeof perHabit)[number]) =>
+    b.days - a.days || b.days / b.of - a.days / a.of;
+  const topHabit = [...perHabit].sort(byDays)[0] ?? null;
+  const idHabit = [...perHabit].filter((h) => h.habit.identity?.trim()).sort(byDays)[0];
+
+  const moods = dates.map((d) => checkin(d)?.mood).filter((m): m is NonNullable<typeof m> => m !== undefined);
+  const energies = dates.map((d) => checkin(d)?.energy).filter((e): e is NonNullable<typeof e> => e !== undefined);
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+  return {
+    start,
+    end: addDays(start, 6),
+    days,
+    activeDays: active.length,
+    keptDays: active.filter((d) => (d.ratio ?? 0) > 0).length,
+    fullDays: active.filter((d) => d.ratio === 1).length,
+    avg: avgOf(active),
+    prevAvg: avgOf(prev),
+    bestDay,
+    topHabit,
+    moodAvg: moods.length >= 3 ? mean(moods) : null,
+    energyAvg: energies.length >= 3 ? mean(energies) : null,
+    identity: idHabit ? { text: idHabit.habit.identity!.trim(), days: idHabit.days } : null,
+  };
+}

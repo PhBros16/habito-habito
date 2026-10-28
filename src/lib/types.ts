@@ -46,6 +46,7 @@ export interface Settings {
   tone: Tone;
   hardDayDate: string | null; // dia difícil vale só para a data guardada
   offerDismissedDate: string | null; // dia em que a oferta de "só o essencial" foi dispensada
+  retroSeenWeek: string | null; // segunda-feira da última retrospectiva aberta
   seeded: boolean;
 }
 
@@ -55,6 +56,7 @@ export const defaultSettings: Settings = {
   tone: "gentle",
   hardDayDate: null,
   offerDismissedDate: null,
+  retroSeenWeek: null,
   seeded: false,
 };
 

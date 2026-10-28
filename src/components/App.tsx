@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "motion/react";
 import { HabitsProvider, useHabits } from "@/lib/store";
-import { dateKey, greetingOf, lastDays, longDate, momentOf, relativeLabel } from "@/lib/dates";
+import { dateKey, greetingOf, lastDays, longDate, momentOf, parseKey, relativeLabel } from "@/lib/dates";
 import { phraseFor, randomPhrase } from "@/lib/phrases";
 import { levelOf, type Habit } from "@/lib/types";
 import { useFeedback } from "@/lib/useFeedback";
@@ -13,6 +13,8 @@ import { Celebration } from "./Celebration";
 import { AddHabitSheet } from "./AddHabitSheet";
 import { SettingsSheet } from "./SettingsSheet";
 import { StatsSheet } from "./StatsSheet";
+import { WeekReviewSheet } from "./WeekReviewSheet";
+import { reviewWeekStart } from "@/lib/stats";
 import { CheckIn } from "./CheckIn";
 import { isLowDay } from "@/lib/checkin";
 import { ChartIcon, LeafIcon, PlusIcon, SlidersIcon, SoundOffIcon, SoundOnIcon } from "./icons";
@@ -52,6 +54,7 @@ function Main() {
   const [addOpen, setAddOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [celebrate, setCelebrate] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -81,6 +84,11 @@ function Main() {
   const doneCount = visible.filter((h) => levelOf(h, getValue(h.id, selected)) >= 1).length;
 
   const moment = momentOf();
+  const reviewStart = reviewWeekStart(today);
+  const dowToday = parseKey(today).getDay();
+  const retroOffer =
+    isToday && (dowToday === 0 || dowToday === 1 || dowToday === 2) && settings.retroSeenWeek !== reviewStart;
+
   // Em dia pesado (humor ou energia baixos) as frases ficam mais acolhedoras.
   const lowDay = isLowDay(getCheckin(today));
   const offerOpen =
@@ -198,6 +206,43 @@ function Main() {
           onSelect={(d) => setPicked(d === today ? null : d)}
         />
       </div>
+
+      {/* convite para a retrospectiva: domingo, segunda e terça, uma vez por semana */}
+      <AnimatePresence>
+        {retroOffer && (
+          <motion.div
+            key="retro"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-5 flex items-center gap-3 rounded-3xl border border-line px-4 py-3.5">
+              <p className="min-w-0 flex-1 text-sm leading-snug">Sua semana está pronta para ser vista.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setReviewOpen(true);
+                  updateSettings({ retroSeenWeek: reviewStart });
+                }}
+                className="rounded-full px-4 py-2 text-sm font-medium"
+                style={{ background: "var(--ink)", color: "var(--bg)" }}
+              >
+                Ver
+              </button>
+              <button
+                type="button"
+                aria-label="Dispensar convite da semana"
+                onClick={() => updateSettings({ retroSeenWeek: reviewStart })}
+                className="px-1 text-sm text-muted"
+              >
+                Agora não
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* check-in de humor e energia */}
       <div className="mt-5">
@@ -321,7 +366,16 @@ function Main() {
       <Celebration show={celebrate !== null} phrase={celebrate ?? ""} />
       <AddHabitSheet open={addOpen} onClose={() => setAddOpen(false)} onAdd={addHabit} />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <StatsSheet open={statsOpen} onClose={() => setStatsOpen(false)} today={today} />
+      <StatsSheet
+        open={statsOpen}
+        onClose={() => setStatsOpen(false)}
+        today={today}
+        onOpenReview={() => {
+          setStatsOpen(false);
+          setReviewOpen(true);
+        }}
+      />
+      <WeekReviewSheet open={reviewOpen} onClose={() => setReviewOpen(false)} weekStart={reviewStart} />
 
       <footer className="mt-10 text-center text-xs text-muted/70">
         {APP_NAME} · seus dados ficam só neste aparelho

@@ -44,14 +44,16 @@ export function StatsSheet({
   open,
   onClose,
   today,
+  onOpenReview,
 }: {
   open: boolean;
   onClose: () => void;
   today: string;
+  onOpenReview: () => void;
 }) {
   return (
     <Sheet open={open} onClose={onClose} title="Seu ritmo">
-      <StatsBody today={today} />
+      <StatsBody today={today} onOpenReview={onOpenReview} />
     </Sheet>
   );
 }
@@ -78,7 +80,7 @@ function Section({
   );
 }
 
-function StatsBody({ today }: { today: string }) {
+function StatsBody({ today, onOpenReview }: { today: string; onOpenReview: () => void }) {
   const { habits, getValue, getCheckin } = useHabits();
 
   const data = useMemo(
@@ -112,6 +114,15 @@ function StatsBody({ today }: { today: string }) {
 
   return (
     <div className="flex flex-col gap-7 pb-2">
+      <button
+        type="button"
+        onClick={onOpenReview}
+        className="flex items-center justify-between rounded-2xl border border-line px-4 py-3 text-left text-sm"
+      >
+        <span>Retrospectiva da semana</span>
+        <span className="text-muted">ver →</span>
+      </button>
+
       {/* resumo */}
       <Section title="Visão geral" index={0}>
         <div className="grid grid-cols-3 gap-2.5">

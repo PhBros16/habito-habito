@@ -40,6 +40,8 @@ export interface Entry {
   value: number;
 }
 
+import type { Levels } from "./ambient";
+
 export interface Settings {
   theme: ThemePref;
   sound: boolean;
@@ -47,6 +49,7 @@ export interface Settings {
   hardDayDate: string | null; // dia difícil vale só para a data guardada
   offerDismissedDate: string | null; // dia em que a oferta de "só o essencial" foi dispensada
   retroSeenWeek: string | null; // segunda-feira da última retrospectiva aberta
+  ambient: Levels; // volume de cada camada do som ambiente (0..1)
   seeded: boolean;
 }
 
@@ -57,6 +60,7 @@ export const defaultSettings: Settings = {
   hardDayDate: null,
   offerDismissedDate: null,
   retroSeenWeek: null,
+  ambient: { rain: 0.5, wind: 0, waves: 0, piano: 0.45 },
   seeded: false,
 };
 

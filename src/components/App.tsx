@@ -16,6 +16,8 @@ import { StatsSheet } from "./StatsSheet";
 import { WeekReviewSheet } from "./WeekReviewSheet";
 import { AmbientSheet } from "./AmbientSheet";
 import { GardenCard, GardenSheet } from "./GardenSheet";
+import { PauseSheet } from "./PauseSheet";
+import { activePause, rangeText } from "@/lib/pauses";
 import { isPlaying, subscribe } from "@/lib/ambient";
 import { reviewWeekStart } from "@/lib/stats";
 import { CheckIn } from "./CheckIn";
@@ -40,8 +42,17 @@ function Home() {
 }
 
 function Main() {
-  const { habits, getValue, setValue, addHabit, removeHabit, settings, updateSettings, getCheckin } =
-    useHabits();
+  const {
+    habits,
+    getValue,
+    setValue,
+    addHabit,
+    removeHabit,
+    settings,
+    updateSettings,
+    getCheckin,
+    endPause,
+  } = useHabits();
   const fb = useFeedback();
 
   // "hoje" acompanha a virada do dia mesmo com o app aberto
@@ -60,6 +71,7 @@ function Main() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [ambientOpen, setAmbientOpen] = useState(false);
   const [gardenOpen, setGardenOpen] = useState(false);
+  const [pauseOpen, setPauseOpen] = useState(false);
   const ambientOn = useSyncExternalStore(subscribe, isPlaying, () => false);
   const [celebrate, setCelebrate] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
@@ -97,13 +109,14 @@ function Main() {
 
   // Em dia pesado (humor ou energia baixos) as frases ficam mais acolhedoras.
   const lowDay = isLowDay(getCheckin(today));
+  const pauseNow = activePause(settings.pauses, today);
   const offerOpen =
-    isToday && lowDay && !hardDay && essentials.length > 0 && settings.offerDismissedDate !== today;
+    isToday && !pauseNow && lowDay && !hardDay && essentials.length > 0 && settings.offerDismissedDate !== today;
   const phrase = useMemo(() => {
     if (!isToday) return "";
-    if (hardDay || lowDay) return phraseFor(settings.tone, "hardDay", today);
+    if (hardDay || lowDay || pauseNow) return phraseFor(settings.tone, "hardDay", today);
     return phraseFor(settings.tone, moment, today);
-  }, [isToday, hardDay, lowDay, settings.tone, moment, today]);
+  }, [isToday, hardDay, lowDay, pauseNow, settings.tone, moment, today]);
 
   const showToast = (text: string) => {
     const id = ++toastSeq.current;
@@ -209,6 +222,40 @@ function Main() {
           onSelect={(d) => setPicked(d === today ? null : d)}
         />
       </div>
+
+      {/* pausa planejada em andamento */}
+      <AnimatePresence>
+        {isToday && pauseNow && (
+          <motion.div
+            key="pause"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-5 rounded-3xl border p-4" style={{ borderColor: "var(--sage)" }}>
+              <p className="font-display text-lg">Em pausa{pauseNow.reason ? ` · ${pauseNow.reason}` : ""}</p>
+              <p className="mt-1 text-sm leading-snug text-muted">
+                {rangeText(pauseNow)}. Sua sequência está protegida; se você fizer algo hoje, conta do mesmo jeito.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => endPause(pauseNow.id, today)}
+                  className="rounded-full px-4 py-2 text-sm font-medium"
+                  style={{ background: "var(--ink)", color: "var(--bg)" }}
+                >
+                  Voltar agora
+                </button>
+                <button type="button" onClick={() => setPauseOpen(true)} className="rounded-full border border-line px-4 py-2 text-sm text-muted">
+                  Ver pausas
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* convite para a retrospectiva: domingo, segunda e terça, uma vez por semana */}
       <AnimatePresence>
@@ -371,7 +418,15 @@ function Main() {
 
       <Celebration show={celebrate !== null} phrase={celebrate ?? ""} />
       <AddHabitSheet open={addOpen} onClose={() => setAddOpen(false)} onAdd={addHabit} />
-      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onOpenPauses={() => {
+          setSettingsOpen(false);
+          setPauseOpen(true);
+        }}
+      />
+      <PauseSheet open={pauseOpen} onClose={() => setPauseOpen(false)} today={today} />
       <StatsSheet
         open={statsOpen}
         onClose={() => setStatsOpen(false)}

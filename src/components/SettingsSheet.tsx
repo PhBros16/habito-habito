@@ -46,7 +46,15 @@ function Segment<T extends string>({
   );
 }
 
-export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SettingsSheet({
+  open,
+  onClose,
+  onOpenPauses,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onOpenPauses: () => void;
+}) {
   const { settings, updateSettings, exportJson } = useHabits();
 
   const download = () => {
@@ -95,6 +103,17 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
               animate={{ x: settings.sound ? 24 : 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 32 }}
             />
+          </button>
+        </section>
+
+        <section className="flex flex-col gap-2.5">
+          <h3 className="text-sm text-muted">Pausas</h3>
+          <button type="button" onClick={onOpenPauses} className="rounded-2xl border border-line px-4 py-3 text-left text-sm">
+            Pausas planejadas
+            <span className="block text-[13px] text-muted">
+              Viagem ou doença sem quebrar a sequência.
+              {settings.pauses.length > 0 && ` ${settings.pauses.length} ${settings.pauses.length === 1 ? "registrada" : "registradas"}.`}
+            </span>
           </button>
         </section>
 

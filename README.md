@@ -19,6 +19,7 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 - **Histórico dos últimos 7 dias**, navegável
 - **Check-in de humor e energia** (cinco rostos e três níveis, um toque cada); recolhe num resumo e dá para editar ou limpar. Em dia pesado (humor ≤ 2 ou energia baixa) as frases ficam mais acolhedoras e o app oferece deixar só o essencial
 - **Retrospectiva semanal** (segunda a domingo): dias mantidos, anéis por dia, média e comparação com a semana anterior, melhor dia, hábito mais feito, humor médio e a frase de identidade com os "votos" da semana. Um convite aparece de domingo a terça, uma vez por semana; também há um atalho nas estatísticas
+- **Jardim vivo**: cada hábito vira uma planta (flor, broto ou arbusto) que cresce com os dias feitos, de semente a frondosa. Nada morre: sem fazer por 3 dias a planta só "descansa" e volta a crescer quando você volta. Céu muda com a hora (amanhecer, dia, entardecer, noite com vaga-lumes) e borboletas visitam quando a sequência passa de 3, 7 e 14 dias
 - **Backup em JSON** nos ajustes
 - **Estatísticas** (ícone de gráfico no topo), tudo calculado localmente:
   - Dias seguidos, melhor sequência e conclusão dos últimos 30 dias
@@ -68,6 +69,7 @@ src/
     types.ts      modelo de dados e níveis (mínimo/ideal)
     stats.ts      sequências, mapa de calor, recuperação e padrões
     checkin.ts    rótulos e regra de "dia pesado"
+    garden.ts     estágios, crescimento e descanso das plantas
     db.ts         IndexedDB (v2: hábitos, registros, ajustes, check-ins)
     store.tsx     estado global + persistência
     phrases.ts    frases por momento e tom
@@ -83,4 +85,4 @@ scripts/
 ## Próximas fases
 
 - **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos
-- **Fase 3:** retrospectiva anual, jardim vivo, pausas planejadas, diário de uma linha
+- **Fase 3:** retrospectiva anual, pausas planejadas, diário de uma linha

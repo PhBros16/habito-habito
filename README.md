@@ -20,6 +20,7 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 - **Check-in de humor e energia** (cinco rostos e três níveis, um toque cada); recolhe num resumo e dá para editar ou limpar. Em dia pesado (humor ≤ 2 ou energia baixa) as frases ficam mais acolhedoras e o app oferece deixar só o essencial
 - **Retrospectiva semanal** (segunda a domingo): dias mantidos, anéis por dia, média e comparação com a semana anterior, melhor dia, hábito mais feito, humor médio e a frase de identidade com os "votos" da semana. Um convite aparece de domingo a terça, uma vez por semana; também há um atalho nas estatísticas
 - **Jardim vivo**: cada hábito vira uma planta (flor, broto ou arbusto) que cresce com os dias feitos, de semente a frondosa. Nada morre: sem fazer por 3 dias a planta só "descansa" e volta a crescer quando você volta. Céu muda com a hora (amanhecer, dia, entardecer, noite com vaga-lumes) e borboletas visitam quando a sequência passa de 3, 7 e 14 dias
+- **Pausas planejadas** (Ajustes → Pausas): viagem, doença, semana corrida. Dias em pausa não quebram a sequência, não entram nas médias, retrospectiva nem padrões, e as plantas dormem sem murchar. Podem ser futuras, passadas ou abertas ("até eu voltar"); se você fizer algo num dia de pausa, ele conta normalmente
 - **Backup em JSON** nos ajustes
 - **Estatísticas** (ícone de gráfico no topo), tudo calculado localmente:
   - Dias seguidos, melhor sequência e conclusão dos últimos 30 dias
@@ -62,7 +63,7 @@ Depois, em [vercel.com/new](https://vercel.com/new): importe o repositório. Nen
 ```
 src/
   app/            layout, manifest (PWA), página
-  components/     telas, sheets, celebração, semana, check-in, retrospectiva
+  components/     telas, sheets, celebração, semana, check-in, retrospectiva, jardim, pausas
     habits/       StampCheck · NumericHabit · HabitCard
       visuals/    Glass · Book · Ring · Beads
   lib/
@@ -70,6 +71,7 @@ src/
     stats.ts      sequências, mapa de calor, recuperação e padrões
     checkin.ts    rótulos e regra de "dia pesado"
     garden.ts     estágios, crescimento e descanso das plantas
+    pauses.ts     pausas planejadas (datas, motivos, textos)
     db.ts         IndexedDB (v2: hábitos, registros, ajustes, check-ins)
     store.tsx     estado global + persistência
     phrases.ts    frases por momento e tom
@@ -85,4 +87,4 @@ scripts/
 ## Próximas fases
 
 - **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos
-- **Fase 3:** retrospectiva anual, pausas planejadas, diário de uma linha
+- **Fase 3:** retrospectiva anual, diário de uma linha

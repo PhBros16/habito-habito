@@ -15,6 +15,7 @@ import { SettingsSheet } from "./SettingsSheet";
 import { StatsSheet } from "./StatsSheet";
 import { WeekReviewSheet } from "./WeekReviewSheet";
 import { AmbientSheet } from "./AmbientSheet";
+import { GardenCard, GardenSheet } from "./GardenSheet";
 import { isPlaying, subscribe } from "@/lib/ambient";
 import { reviewWeekStart } from "@/lib/stats";
 import { CheckIn } from "./CheckIn";
@@ -58,6 +59,7 @@ function Main() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [ambientOpen, setAmbientOpen] = useState(false);
+  const [gardenOpen, setGardenOpen] = useState(false);
   const ambientOn = useSyncExternalStore(subscribe, isPlaying, () => false);
   const [celebrate, setCelebrate] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
@@ -317,6 +319,9 @@ function Main() {
         </div>
       </LayoutGroup>
 
+      {/* jardim: cada hábito vira uma planta */}
+      <GardenCard today={today} onOpen={() => setGardenOpen(true)} />
+
       {habits.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -376,6 +381,7 @@ function Main() {
           setReviewOpen(true);
         }}
       />
+      <GardenSheet open={gardenOpen} onClose={() => setGardenOpen(false)} today={today} />
       <AmbientSheet open={ambientOpen} onClose={() => setAmbientOpen(false)} />
       <WeekReviewSheet open={reviewOpen} onClose={() => setReviewOpen(false)} weekStart={reviewStart} />
 

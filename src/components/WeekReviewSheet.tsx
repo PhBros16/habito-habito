@@ -60,10 +60,10 @@ export function WeekReviewSheet({
 }
 
 function Body({ weekStart }: { weekStart: string }) {
-  const { habits, getValue, getCheckin } = useHabits();
+  const { habits, getValue, getCheckin, isPaused } = useHabits();
   const r = useMemo(
-    () => weekReview(habits, weekStart, getValue, getCheckin),
-    [habits, weekStart, getValue, getCheckin]
+    () => weekReview(habits, weekStart, getValue, getCheckin, isPaused),
+    [habits, weekStart, getValue, getCheckin, isPaused]
   );
 
   if (r.activeDays === 0) {
@@ -85,7 +85,10 @@ function Body({ weekStart }: { weekStart: string }) {
           <AnimatedNumber value={r.keptDays} className="font-display text-6xl leading-none" />
           <span className="font-display text-2xl text-muted">de {r.activeDays} dias</span>
         </p>
-        <p className="mt-1 text-sm text-muted">com ao menos um hábito feito</p>
+        <p className="mt-1 text-sm text-muted">
+          com ao menos um hábito feito
+          {r.pausedDays > 0 && ` · ${r.pausedDays} ${r.pausedDays === 1 ? "dia" : "dias"} em pausa, fora da conta`}
+        </p>
       </Block>
 
       <Block index={i++}>

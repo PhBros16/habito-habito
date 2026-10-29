@@ -1,6 +1,6 @@
-import { addDays, dateKey, parseKey } from "./dates";
+import { addDays, dateKey } from "./dates";
 import { levelOf, type Habit } from "./types";
-import type { ValueFn } from "./stats";
+import type { PausedFn, ValueFn } from "./stats";
 
 export type Species = "flor" | "broto" | "arbusto";
 const SPECIES: Species[] = ["flor", "broto", "arbusto"];
@@ -22,6 +22,7 @@ export interface Plant {
   toNext: number | null; // 0..1 até o próximo estágio (null no último)
   daysSince: number | null; // dias desde o último feito (null se nunca)
   resting: boolean;
+  paused: boolean; // em pausa planejada hoje: a planta dorme, sem culpa
   doneToday: boolean;
 }
 
@@ -44,7 +45,12 @@ export function growthOf(days: number): number {
   return Math.pow(Math.min(1, days / 50), 0.65);
 }
 
-export function gardenPlants(habits: Habit[], today: string, get: ValueFn): Plant[] {
+export function gardenPlants(
+  habits: Habit[],
+  today: string,
+  get: ValueFn,
+  paused: PausedFn = () => false
+): Plant[] {
   return habits.map((habit) => {
     const from = dateKey(new Date(habit.createdAt));
     let days = 0;
@@ -57,10 +63,12 @@ export function gardenPlants(habits: Habit[], today: string, get: ValueFn): Plan
     }
     const stage = stageOf(days);
     const next = STAGE_DAYS[stage + 1];
-    const daysSince =
-      last === null
-        ? null
-        : Math.round((parseKey(today).getTime() - parseKey(last).getTime()) / 86_400_000);
+    // dias em pausa não contam como "tempo sem fazer"
+    let daysSince: number | null = null;
+    if (last !== null) {
+      daysSince = 0;
+      for (let d = addDays(last, 1); d <= today; d = addDays(d, 1)) if (!paused(d)) daysSince++;
+    }
     const h = hash(habit.id);
     return {
       habit,
@@ -71,7 +79,8 @@ export function gardenPlants(habits: Habit[], today: string, get: ValueFn): Plan
       growth: growthOf(days),
       toNext: next === undefined ? null : (days - STAGE_DAYS[stage]) / (next - STAGE_DAYS[stage]),
       daysSince,
-      resting: days > 0 && daysSince !== null && daysSince >= REST_AFTER,
+      resting: days > 0 && daysSince !== null && daysSince >= REST_AFTER && !paused(today),
+      paused: paused(today),
       doneToday: daysSince === 0,
     };
   });

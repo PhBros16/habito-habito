@@ -81,19 +81,19 @@ function Section({
 }
 
 function StatsBody({ today, onOpenReview }: { today: string; onOpenReview: () => void }) {
-  const { habits, getValue, getCheckin } = useHabits();
+  const { habits, getValue, getCheckin, isPaused } = useHabits();
 
   const data = useMemo(
     () => ({
-      ov: overview(habits, today, getValue),
-      cells: heatmap(habits, today, getValue),
-      week: weekdays(habits, today, getValue),
-      perHabit: habitStats(habits, today, getValue),
-      rec: recovery(habits, today, getValue),
-      cor: correlations(habits, today, getValue),
-      mood: moodStats(habits, today, getValue, getCheckin),
+      ov: overview(habits, today, getValue, isPaused),
+      cells: heatmap(habits, today, getValue, 18, isPaused),
+      week: weekdays(habits, today, getValue, isPaused),
+      perHabit: habitStats(habits, today, getValue, isPaused),
+      rec: recovery(habits, today, getValue, isPaused),
+      cor: correlations(habits, today, getValue, isPaused),
+      mood: moodStats(habits, today, getValue, getCheckin, isPaused),
     }),
-    [habits, today, getValue, getCheckin]
+    [habits, today, getValue, getCheckin, isPaused]
   );
   const { ov, cells, week, perHabit, rec, cor, mood } = data;
 
@@ -143,7 +143,8 @@ function StatsBody({ today, onOpenReview }: { today: string; onOpenReview: () =>
           </Tile>
         </div>
         <p className="text-[13px] text-muted">
-          Um dia conta quando você faz ao menos um hábito, nem que seja o mínimo.
+          Um dia conta quando você faz ao menos um hábito, nem que seja o mínimo. Dias em pausa não
+          quebram a sequência nem entram nas médias.
         </p>
       </Section>
 
@@ -174,7 +175,7 @@ function StatsBody({ today, onOpenReview }: { today: string; onOpenReview: () =>
                   {!c.future && (
                     <title>
                       {longDate(c.date)}
-                      {c.ratio !== null ? `: ${pct(c.ratio)}% dos hábitos` : ""}
+                      {c.ratio !== null ? `: ${pct(c.ratio)}% dos hábitos` : c.paused ? ": em pausa" : ""}
                     </title>
                   )}
                 </motion.rect>

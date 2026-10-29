@@ -11,10 +11,10 @@ import { STAGE_DAYS, STAGE_NAMES, gardenPlants } from "@/lib/garden";
 
 /** Dados do jardim a partir dos hábitos (compartilhado entre o cartão da home e a sheet). */
 export function useGarden(today: string) {
-  const { habits, getValue } = useHabits();
+  const { habits, getValue, isPaused } = useHabits();
   const [hour] = useState(() => new Date().getHours());
-  const plants = useMemo(() => gardenPlants(habits, today, getValue), [habits, today, getValue]);
-  const streak = useMemo(() => overview(habits, today, getValue).current, [habits, today, getValue]);
+  const plants = useMemo(() => gardenPlants(habits, today, getValue, isPaused), [habits, today, getValue, isPaused]);
+  const streak = useMemo(() => overview(habits, today, getValue, isPaused).current, [habits, today, getValue, isPaused]);
   return { plants, hour, streak };
 }
 
@@ -108,6 +108,7 @@ function Body({ today }: { today: string }) {
               <p className="mt-2.5 text-[13px] text-muted">
                 {p.days} {p.days === 1 ? "dia feito" : "dias feitos"}
                 {next !== undefined && ` · faltam ${next - p.days} para ${STAGE_NAMES[p.stage + 1].toLowerCase()}`}
+                {p.paused && " · em pausa, dormindo tranquila"}
                 {p.resting && p.daysSince !== null && ` · descansando há ${p.daysSince} dias`}
                 {p.doneToday && " · regada hoje"}
               </p>

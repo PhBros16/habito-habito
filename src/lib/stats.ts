@@ -2,6 +2,9 @@ import { addDays, dateKey, parseKey } from "./dates";
 import { levelOf, type Checkin, type Habit } from "./types";
 
 export type ValueFn = (habitId: string, date: string) => number;
+/** Dia em pausa planejada: sem nada feito, ele é neutro (não quebra sequência nem entra em médias). */
+export type PausedFn = (date: string) => boolean;
+const never: PausedFn = () => false;
 
 /** Dia (fuso local) em que o hábito passou a existir. */
 const startKey = (h: Habit) => dateKey(new Date(h.createdAt));
@@ -11,10 +14,17 @@ const isDone = (h: Habit, date: string, get: ValueFn) => levelOf(h, get(h.id, da
 const activeOn = (h: Habit, date: string) => date >= startKey(h);
 
 /** Fração de hábitos feitos (≥ mínimo) no dia, ou null se ainda não havia hábitos. */
-export function dayRatio(habits: Habit[], date: string, get: ValueFn): number | null {
+export function dayRatio(
+  habits: Habit[],
+  date: string,
+  get: ValueFn,
+  paused: PausedFn = never
+): number | null {
   const active = habits.filter((h) => activeOn(h, date));
   if (active.length === 0) return null;
-  return active.filter((h) => isDone(h, date, get)).length / active.length;
+  const done = active.filter((h) => isDone(h, date, get)).length;
+  if (done === 0 && paused(date)) return null;
+  return done / active.length;
 }
 
 function daysBetween(from: string, to: string): string[] {
@@ -24,18 +34,24 @@ function daysBetween(from: string, to: string): string[] {
 }
 
 /** Sequência atual e melhor sequência de uma lista de dias "mantidos". */
-function streaks(kept: (date: string) => boolean, from: string, today: string) {
+function streaks(
+  kept: (date: string) => boolean,
+  from: string,
+  today: string,
+  neutral: (date: string) => boolean = () => false
+) {
   let best = 0;
   let run = 0;
   for (const d of daysBetween(from, today)) {
+    if (neutral(d)) continue; // pausa: nem soma nem quebra
     run = kept(d) ? run + 1 : 0;
     best = Math.max(best, run);
   }
   // sequência atual: hoje ainda está em andamento, então não "quebra" a sequência
   let current = 0;
-  let d = kept(today) ? today : addDays(today, -1);
-  while (d >= from && kept(d)) {
-    current++;
+  let d = kept(today) || neutral(today) ? today : addDays(today, -1);
+  while (d >= from && (kept(d) || neutral(d))) {
+    if (!neutral(d)) current++;
     d = addDays(d, -1);
   }
   return { current, best };
@@ -49,14 +65,20 @@ export interface HabitStat {
   total: number; // dias feitos desde sempre
 }
 
-export function habitStats(habits: Habit[], today: string, get: ValueFn): HabitStat[] {
+export function habitStats(
+  habits: Habit[],
+  today: string,
+  get: ValueFn,
+  paused: PausedFn = never
+): HabitStat[] {
   return habits.map((habit) => {
     const from = startKey(habit);
-    const { current, best } = streaks((d) => isDone(habit, d, get), from, today);
+    const idle = (d: string) => paused(d) && !isDone(habit, d, get);
+    const { current, best } = streaks((d) => isDone(habit, d, get), from, today, idle);
     const window = daysBetween(
       from > addDays(today, -29) ? from : addDays(today, -29),
       today
-    );
+    ).filter((d) => !idle(d));
     const done = window.filter((d) => isDone(habit, d, get)).length;
     const total = daysBetween(from, today).filter((d) => isDone(habit, d, get)).length;
     return { habit, current, best, rate30: window.length ? done / window.length : null, total };
@@ -72,37 +94,55 @@ export interface Overview {
   daysKept: number;
 }
 
-export function overview(habits: Habit[], today: string, get: ValueFn): Overview {
+export function overview(
+  habits: Habit[],
+  today: string,
+  get: ValueFn,
+  paused: PausedFn = never
+): Overview {
   const starts = habits.map(startKey).sort();
   if (starts.length === 0) {
     return { hasData: false, firstDay: null, current: 0, best: 0, rate30: null, daysKept: 0 };
   }
   const from = starts[0];
-  const kept = (d: string) => (dayRatio(habits, d, get) ?? 0) > 0;
+  const kept = (d: string) => (dayRatio(habits, d, get, paused) ?? 0) > 0;
+  const neutral = (d: string) => dayRatio(habits, d, get, paused) === null;
   const days = daysBetween(from, today);
   const daysKept = days.filter(kept).length;
-  const { current, best } = streaks(kept, from, today);
+  const { current, best } = streaks(kept, from, today, neutral);
   const win = daysBetween(from > addDays(today, -29) ? from : addDays(today, -29), today);
-  const ratios = win.map((d) => dayRatio(habits, d, get)).filter((r): r is number => r !== null);
+  const ratios = win.map((d) => dayRatio(habits, d, get, paused)).filter((r): r is number => r !== null);
   const rate30 = ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : null;
   return { hasData: daysKept > 0, firstDay: from, current, best, rate30, daysKept };
 }
 
 export interface HeatCell {
   date: string;
-  ratio: number | null; // null = futuro ou antes do primeiro hábito
+  ratio: number | null; // null = futuro, pausa ou antes do primeiro hábito
   future: boolean;
+  paused: boolean;
 }
 
 /** Grade de semanas (colunas) × dias da semana (linhas, domingo no topo). */
-export function heatmap(habits: Habit[], today: string, get: ValueFn, weeks = 18): HeatCell[][] {
+export function heatmap(
+  habits: Habit[],
+  today: string,
+  get: ValueFn,
+  weeks = 18,
+  paused: PausedFn = never
+): HeatCell[][] {
   const dow = parseKey(today).getDay();
   const firstStart = addDays(addDays(today, -dow), -7 * (weeks - 1));
   return Array.from({ length: weeks }, (_, w) =>
     Array.from({ length: 7 }, (_, d) => {
       const date = addDays(firstStart, w * 7 + d);
       const future = date > today;
-      return { date, future, ratio: future ? null : dayRatio(habits, date, get) };
+      return {
+        date,
+        future,
+        paused: !future && paused(date),
+        ratio: future ? null : dayRatio(habits, date, get, paused),
+      };
     })
   );
 }
@@ -114,11 +154,16 @@ export interface WeekdayStat {
 }
 
 /** Média de conclusão por dia da semana nas últimas 12 semanas (sem contar hoje). */
-export function weekdays(habits: Habit[], today: string, get: ValueFn): WeekdayStat[] {
+export function weekdays(
+  habits: Habit[],
+  today: string,
+  get: ValueFn,
+  paused: PausedFn = never
+): WeekdayStat[] {
   const sums = Array.from({ length: 7 }, () => ({ sum: 0, n: 0 }));
   for (let i = 1; i <= 84; i++) {
     const d = addDays(today, -i);
-    const r = dayRatio(habits, d, get);
+    const r = dayRatio(habits, d, get, paused);
     if (r === null) continue;
     const dow = parseKey(d).getDay();
     sums[dow].sum += r;
@@ -134,10 +179,15 @@ export interface Recovery {
 }
 
 /** Quão rápido você volta depois de um dia em branco. */
-export function recovery(habits: Habit[], today: string, get: ValueFn): Recovery {
+export function recovery(
+  habits: Habit[],
+  today: string,
+  get: ValueFn,
+  paused: PausedFn = never
+): Recovery {
   const starts = habits.map(startKey).sort();
   if (starts.length === 0) return { gaps: 0, avgDays: null, oneDayShare: null };
-  const kept = (d: string) => (dayRatio(habits, d, get) ?? 0) > 0;
+  const kept = (d: string) => (dayRatio(habits, d, get, paused) ?? 0) > 0;
   const days = daysBetween(starts[0], addDays(today, -1));
   const firstKept = days.findIndex(kept);
   if (firstKept === -1) return { gaps: 0, avgDays: null, oneDayShare: null };
@@ -145,6 +195,7 @@ export function recovery(habits: Habit[], today: string, get: ValueFn): Recovery
   const lengths: number[] = [];
   let run = 0;
   for (const d of days.slice(firstKept)) {
+    if (dayRatio(habits, d, get, paused) === null) continue; // pausa não é lacuna
     if (kept(d)) {
       if (run > 0) lengths.push(run);
       run = 0;
@@ -171,13 +222,18 @@ export interface Correlation {
  * "Nos dias em que você faz A, é mais provável fazer B." Só aparece com dados
  * suficientes (≥ 5 dias com e sem A) e diferença relevante (≥ 20 pontos).
  */
-export function correlations(habits: Habit[], today: string, get: ValueFn): Correlation[] {
+export function correlations(
+  habits: Habit[],
+  today: string,
+  get: ValueFn,
+  paused: PausedFn = never
+): Correlation[] {
   const found: Correlation[] = [];
   const window = daysBetween(addDays(today, -60), addDays(today, -1));
   for (const a of habits) {
     for (const b of habits) {
       if (a.id === b.id) continue;
-      const days = window.filter((d) => activeOn(a, d) && activeOn(b, d));
+      const days = window.filter((d) => activeOn(a, d) && activeOn(b, d) && !paused(d));
       const withA = days.filter((d) => isDone(a, d, get));
       const withoutA = days.filter((d) => !isDone(a, d, get));
       if (withA.length < 5 || withoutA.length < 5) continue;
@@ -241,7 +297,8 @@ export function moodStats(
   habits: Habit[],
   today: string,
   get: ValueFn,
-  checkin: CheckinFn
+  checkin: CheckinFn,
+  paused: PausedFn = never
 ): MoodStats {
   const series: MoodPoint[] = [];
   for (let i = 13; i >= 0; i--) {
@@ -257,7 +314,7 @@ export function moodStats(
     if (c && (c.mood !== undefined || c.energy !== undefined)) count++;
   }
 
-  const ratioOn = (d: string) => dayRatio(habits, d, get);
+  const ratioOn = (d: string) => dayRatio(habits, d, get, paused);
   const high = window.filter((d) => (checkin(d)?.mood ?? 0) >= 4 && ratioOn(d) !== null);
   const low = window.filter((d) => {
     const m = checkin(d)?.mood;
@@ -283,7 +340,7 @@ export function moodStats(
 
   const energy: EnergyInsight[] = [];
   for (const h of habits) {
-    const days = window.filter((d) => activeOn(h, d));
+    const days = window.filter((d) => activeOn(h, d) && !(paused(d) && !isDone(h, d, get)));
     const hi = days.filter((d) => checkin(d)?.energy === 3);
     const lo = days.filter((d) => checkin(d)?.energy === 1);
     if (hi.length < 4 || lo.length < 4) continue;
@@ -323,7 +380,8 @@ export interface WeekReview {
   start: string;
   end: string;
   days: WeekDay[];
-  activeDays: number; // dias da semana com algum hábito existindo
+  activeDays: number; // dias da semana com algum hábito existindo (fora as pausas)
+  pausedDays: number; // dias em pausa planejada
   keptDays: number; // dias com ao menos um hábito feito
   fullDays: number; // dias com todos os hábitos feitos
   avg: number | null; // conclusão média (0..1)
@@ -339,20 +397,22 @@ export function weekReview(
   habits: Habit[],
   start: string,
   get: ValueFn,
-  checkin: CheckinFn
+  checkin: CheckinFn,
+  paused: PausedFn = never
 ): WeekReview {
   const dates = daysBetween(start, addDays(start, 6));
   const days: WeekDay[] = dates.map((date) => ({
     date,
-    ratio: dayRatio(habits, date, get),
+    ratio: dayRatio(habits, date, get, paused),
     mood: checkin(date)?.mood ?? null,
   }));
   const active = days.filter((d) => d.ratio !== null);
+  const activeAny = (d: string) => habits.some((h) => activeOn(h, d));
   const avgOf = (list: WeekDay[]) =>
     list.length ? list.reduce((s, d) => s + (d.ratio ?? 0), 0) / list.length : null;
 
   const prev = daysBetween(addDays(start, -7), addDays(start, -1))
-    .map((date) => ({ date, ratio: dayRatio(habits, date, get), mood: null }))
+    .map((date) => ({ date, ratio: dayRatio(habits, date, get, paused), mood: null }))
     .filter((d) => d.ratio !== null);
 
   let bestDay: string | null = null;
@@ -366,7 +426,7 @@ export function weekReview(
 
   const perHabit = habits
     .map((habit) => {
-      const on = dates.filter((d) => activeOn(habit, d));
+      const on = dates.filter((d) => activeOn(habit, d) && !(paused(d) && !isDone(habit, d, get)));
       return { habit, of: on.length, days: on.filter((d) => isDone(habit, d, get)).length };
     })
     .filter((h) => h.of > 0 && h.days > 0);
@@ -384,6 +444,7 @@ export function weekReview(
     end: addDays(start, 6),
     days,
     activeDays: active.length,
+    pausedDays: days.filter((d) => d.ratio === null && paused(d.date) && activeAny(d.date)).length,
     keptDays: active.filter((d) => (d.ratio ?? 0) > 0).length,
     fullDays: active.filter((d) => d.ratio === 1).length,
     avg: avgOf(active),

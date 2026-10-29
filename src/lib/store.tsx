@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import * as store from "./db";
+import { pausedFn } from "./pauses";
 import { SEED_KEYS, TEMPLATES, type HabitTemplate } from "./templates";
 import {
   defaultSettings,
@@ -19,6 +20,7 @@ import {
   type Entry,
   type Habit,
   type Mood,
+  type Pause,
   type Settings,
 } from "./types";
 
@@ -35,6 +37,12 @@ interface Ctx {
   getCheckin: (date: string) => Checkin | undefined;
   /** `null` apaga o campo; omitir deixa como está. */
   setCheckin: (date: string, patch: { mood?: Mood | null; energy?: Energy | null }) => void;
+  /** Dia dentro de uma pausa planejada. */
+  isPaused: (date: string) => boolean;
+  addPause: (p: Omit<Pause, "id">) => void;
+  /** Encerra a pausa ontem (ou a remove, se ainda nem começou). */
+  endPause: (id: string, today: string) => void;
+  removePause: (id: string) => void;
 }
 
 const HabitsContext = createContext<Ctx | null>(null);
@@ -184,6 +192,34 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const isPaused = useMemo(() => pausedFn(settings.pauses), [settings.pauses]);
+
+  const addPause = useCallback(
+    (p: Omit<Pause, "id">) => updateSettings({ pauses: [...settings.pauses, { ...p, id: uid() }] }),
+    [settings.pauses, updateSettings]
+  );
+
+  const removePause = useCallback(
+    (id: string) => updateSettings({ pauses: settings.pauses.filter((p) => p.id !== id) }),
+    [settings.pauses, updateSettings]
+  );
+
+  const endPause = useCallback(
+    (id: string, today: string) => {
+      const yesterday = (() => {
+        const [y, m, d] = today.split("-").map(Number);
+        const dt = new Date(y, m - 1, d - 1);
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+      })();
+      updateSettings({
+        pauses: settings.pauses.flatMap((p) =>
+          p.id !== id ? [p] : p.start > yesterday ? [] : [{ ...p, end: yesterday }]
+        ),
+      });
+    },
+    [settings.pauses, updateSettings]
+  );
+
   const exportJson = useCallback(
     () =>
       JSON.stringify(
@@ -219,8 +255,12 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       exportJson,
       getCheckin,
       setCheckin,
+      isPaused,
+      addPause,
+      endPause,
+      removePause,
     }),
-    [ready, sorted, getValue, setValue, addHabit, removeHabit, settings, updateSettings, exportJson, getCheckin, setCheckin]
+    [ready, sorted, getValue, setValue, addHabit, removeHabit, settings, updateSettings, exportJson, getCheckin, setCheckin, isPaused, addPause, endPause, removePause]
   );
 
   return <HabitsContext.Provider value={value}>{children}</HabitsContext.Provider>;

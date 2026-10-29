@@ -42,6 +42,14 @@ export interface Entry {
 
 import type { Levels } from "./ambient";
 
+/** Pausa planejada: dias que não quebram a sequência nem entram nas médias. */
+export interface Pause {
+  id: string;
+  start: string; // YYYY-MM-DD
+  end: string | null; // null = até eu voltar
+  reason?: string;
+}
+
 export interface Settings {
   theme: ThemePref;
   sound: boolean;
@@ -50,6 +58,7 @@ export interface Settings {
   offerDismissedDate: string | null; // dia em que a oferta de "só o essencial" foi dispensada
   retroSeenWeek: string | null; // segunda-feira da última retrospectiva aberta
   ambient: Levels; // volume de cada camada do som ambiente (0..1)
+  pauses: Pause[];
   seeded: boolean;
 }
 
@@ -61,6 +70,7 @@ export const defaultSettings: Settings = {
   offerDismissedDate: null,
   retroSeenWeek: null,
   ambient: { rain: 0.5, wind: 0, waves: 0, piano: 0.45 },
+  pauses: [],
   seeded: false,
 };
 

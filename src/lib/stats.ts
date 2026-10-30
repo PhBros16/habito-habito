@@ -1,5 +1,6 @@
 import { addDays, dateKey, parseKey } from "./dates";
 import { levelOf, type Checkin, type Habit } from "./types";
+import { isPeriodic } from "./periods";
 
 export type ValueFn = (habitId: string, date: string) => number;
 /** Dia em pausa planejada: sem nada feito, ele é neutro (não quebra sequência nem entra em médias). */
@@ -20,7 +21,8 @@ export function dayRatio(
   get: ValueFn,
   paused: PausedFn = never
 ): number | null {
-  const active = habits.filter((h) => activeOn(h, date));
+  // hábitos por semana/mês só entram no dia em que foram feitos (os outros dias não são falta)
+  const active = habits.filter((h) => activeOn(h, date) && (!isPeriodic(h) || isDone(h, date, get)));
   if (active.length === 0) return null;
   const done = active.filter((h) => isDone(h, date, get)).length;
   if (done === 0 && paused(date)) return null;
@@ -455,4 +457,23 @@ export function weekReview(
     energyAvg: energies.length >= 3 ? mean(energies) : null,
     identity: idHabit ? { text: idHabit.habit.identity!.trim(), days: idHabit.days } : null,
   };
+}
+
+/**
+ * Quantos dias seguidos (até ontem) um hábito diário ficou sem ser feito, ignorando pausas.
+ * Só vale para quem já fez o hábito alguma vez; hábitos por semana/mês ficam de fora.
+ */
+export function missedRun(h: Habit, today: string, get: ValueFn, paused: PausedFn = never): number {
+  if (isPeriodic(h)) return 0;
+  const from = startKey(h);
+  let ever = false;
+  for (let d = from; d < today; d = addDays(d, 1)) if (isDone(h, d, get)) { ever = true; break; }
+  if (!ever || isDone(h, today, get)) return 0;
+  let run = 0;
+  for (let d = addDays(today, -1); d >= from; d = addDays(d, -1)) {
+    if (paused(d)) continue;
+    if (isDone(h, d, get)) break;
+    run++;
+  }
+  return run;
 }

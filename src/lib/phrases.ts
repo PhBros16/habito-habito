@@ -1,4 +1,5 @@
 import type { Tone } from "./types";
+import { CLASSICS, MORE } from "./phrases-more";
 
 export type PhraseMoment =
   | "morning"
@@ -293,9 +294,21 @@ function hash(str: string): number {
 }
 
 function listOf(tone: Tone, moment: PhraseMoment): string[] {
-  const base = (PHRASES[tone] as Partial<Record<PhraseMoment, string[]>>)[moment];
-  const list = base ?? EXTRA[tone][moment];
-  return list && list.length ? list : PHRASES[tone].morning;
+  const base = (PHRASES[tone] as Partial<Record<PhraseMoment, string[]>>)[moment] ?? [];
+  const extra = EXTRA[tone][moment] ?? [];
+  const more = MORE[tone][moment] ?? [];
+  const classics = CLASSICS.filter((c) => c.moments.includes(moment) && c.tones.includes(tone)).map((c) => `${c.text} (${c.by})`);
+  const all = [...base, ...extra, ...more, ...classics];
+  return all.length ? all : PHRASES[tone].morning;
+}
+
+/** Quantas frases existem no total (para o "Sobre" e os testes). */
+export function phraseCount(): number {
+  const tones = Object.keys(PHRASES) as Tone[];
+  const moments = new Set<PhraseMoment>(["morning", "afternoon", "evening", "done", "allDone", "hardDay", "returning", "partial", "monday", "sunday", "monthStart", "minimum", "ideal", "comeback"]);
+  let n = 0;
+  for (const t of tones) for (const m of moments) n += new Set(listOf(t, m)).size;
+  return n;
 }
 
 /** Frase estável para a mesma data/momento (não muda a cada render). */

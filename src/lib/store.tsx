@@ -31,12 +31,14 @@ interface Ctx {
   setValue: (habitId: string, date: string, value: number) => void;
   addHabit: (t: HabitTemplate) => void;
   removeHabit: (id: string) => void;
+  updateHabit: (id: string, patch: Partial<Habit>) => void;
   settings: Settings;
   updateSettings: (patch: Partial<Settings>) => void;
   exportJson: () => string;
   getCheckin: (date: string) => Checkin | undefined;
   /** `null` apaga o campo; omitir deixa como está. */
-  setCheckin: (date: string, patch: { mood?: Mood | null; energy?: Energy | null }) => void;
+  setCheckin: (date: string, patch: { mood?: Mood | null; energy?: Energy | null; note?: string | null }) => void;
+  allCheckins: Checkin[];
   /** Dia dentro de uma pausa planejada. */
   isPaused: (date: string) => boolean;
   addPause: (p: Omit<Pause, "id">) => void;
@@ -148,6 +150,17 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     [habits]
   );
 
+  const updateHabit = useCallback(
+    (id: string, patch: Partial<Habit>) => {
+      const cur = habits.find((h) => h.id === id);
+      if (!cur) return;
+      const next: Habit = { ...cur, ...patch, id: cur.id, createdAt: cur.createdAt, order: cur.order };
+      setHabits(habits.map((h) => (h.id === id ? next : h)));
+      store.saveHabit(next).catch(() => {});
+    },
+    [habits]
+  );
+
   const removeHabit = useCallback((id: string) => {
     setHabits((prev) => prev.filter((h) => h.id !== id));
     setEntries((prev) =>
@@ -167,7 +180,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
   const getCheckin = useCallback((date: string) => checkins[date], [checkins]);
 
   const setCheckin = useCallback(
-    (date: string, patch: { mood?: Mood | null; energy?: Energy | null }) => {
+    (date: string, patch: { mood?: Mood | null; energy?: Energy | null; note?: string | null }) => {
       setCheckins((prev) => {
         const next: Checkin = { ...(prev[date] ?? { date }) };
         if ("mood" in patch) {
@@ -178,8 +191,13 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
           if (patch.energy == null) delete next.energy;
           else next.energy = patch.energy;
         }
+        if ("note" in patch) {
+          const t = patch.note?.slice(0, 1000);
+          if (!t || !t.trim()) delete next.note;
+          else next.note = t;
+        }
         const out = { ...prev };
-        if (next.mood === undefined && next.energy === undefined) {
+        if (next.mood === undefined && next.energy === undefined && next.note === undefined) {
           delete out[date];
           store.deleteCheckin(date).catch(() => {});
         } else {
@@ -250,17 +268,19 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       setValue,
       addHabit,
       removeHabit,
+      updateHabit,
       settings,
       updateSettings,
       exportJson,
       getCheckin,
       setCheckin,
+      allCheckins: Object.values(checkins),
       isPaused,
       addPause,
       endPause,
       removePause,
     }),
-    [ready, sorted, getValue, setValue, addHabit, removeHabit, settings, updateSettings, exportJson, getCheckin, setCheckin, isPaused, addPause, endPause, removePause]
+    [ready, sorted, getValue, setValue, addHabit, removeHabit, updateHabit, checkins, settings, updateSettings, exportJson, getCheckin, setCheckin, isPaused, addPause, endPause, removePause]
   );
 
   return <HabitsContext.Provider value={value}>{children}</HabitsContext.Provider>;

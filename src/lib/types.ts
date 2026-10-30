@@ -1,3 +1,4 @@
+export type Period = "day" | "week" | "month";
 export type HabitKind = "check" | "counter" | "progress";
 export type NumericVisualKey =
   | "glass"
@@ -11,8 +12,11 @@ export type NumericVisualKey =
   | "flame"
   | "weights"
   | "hourglass"
-  | "heart";
-export type CheckVisualKey = "stamp" | "sunrise" | "lamp";
+  | "heart"
+  | "track"
+  | "lotus"
+  | "mountain";
+export type CheckVisualKey = "stamp" | "sunrise" | "lamp" | "shield" | "pill" | "sparkle";
 export type VisualKey = NumericVisualKey | CheckVisualKey;
 export type AccentKey = "sage" | "water" | "sand" | "clay" | "lilac" | "sun";
 export type Tone = "gentle" | "stoic" | "direct" | "humor";
@@ -27,6 +31,7 @@ export interface Checkin {
   date: string; // YYYY-MM-DD (fuso local)
   mood?: Mood;
   energy?: Energy;
+  note?: string; // diário: uma anotação livre sobre o dia
 }
 
 export interface Habit {
@@ -41,6 +46,9 @@ export interface Habit {
   minLabel?: string; // só para "check" com dois níveis
   idealLabel?: string;
   identity?: string; // "Sou alguém que lê todo dia."
+  anchor?: string; // plano se-então: "depois do café"
+  period?: Period; // frequência da meta: todo dia (padrão), X vezes por semana ou por mês
+  periodGoal?: number; // quantas vezes por semana/mês (só quando period != "day")
   essential: boolean; // aparece no "dia difícil"
   createdAt: string; // ISO
   order: number;
@@ -73,6 +81,7 @@ export interface Settings {
   retroSeenWeek: string | null; // segunda-feira da última retrospectiva aberta
   ambient: Levels; // volume de cada camada do som ambiente (0..1)
   pauses: Pause[];
+  obstacleSeen: Record<string, string>; // habitId -> dia em que a checagem de obstáculo foi dispensada
   seeded: boolean;
 }
 
@@ -85,13 +94,14 @@ export const defaultSettings: Settings = {
   retroSeenWeek: null,
   ambient: { rain: 0.5, wind: 0, waves: 0, piano: 0.45 },
   pauses: [],
+  obstacleSeen: {},
   seeded: false,
 };
 
 export const entryId = (habitId: string, date: string) => `${habitId}:${date}`;
 
 /** Visual padrão de um hábito numérico (hábitos antigos não têm o campo). */
-const CHECK_KEYS: VisualKey[] = ["stamp", "sunrise", "lamp"];
+const CHECK_KEYS: VisualKey[] = ["stamp", "sunrise", "lamp", "shield", "pill", "sparkle"];
 
 export function visualOf(h: Habit): VisualKey {
   if (h.kind === "check") return h.visual && CHECK_KEYS.includes(h.visual) ? h.visual : "stamp";

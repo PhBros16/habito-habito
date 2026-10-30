@@ -5,9 +5,11 @@ import type { PausedFn, ValueFn } from "./stats";
 export type Species = "flor" | "broto" | "arbusto";
 const SPECIES: Species[] = ["flor", "broto", "arbusto"];
 
-/** Limiares de dias feitos: semente, broto, muda, jovem, florida, frondosa. */
-export const STAGE_DAYS = [0, 1, 4, 10, 25, 50];
-export const STAGE_NAMES = ["Semente", "Broto", "Muda", "Jovem", "Florida", "Frondosa"];
+/** Limiares de dias feitos: semente, broto, muda, jovem, florida, frondosa, árvore, antiga e lendária. */
+export const STAGE_DAYS = [0, 1, 4, 10, 25, 50, 100, 200, 365];
+export const STAGE_NAMES = ["Semente", "Broto", "Muda", "Jovem", "Florida", "Frondosa", "Árvore", "Árvore antiga", "Lendária"];
+/** A partir daqui a planta vira árvore. */
+export const TREE_DAYS = 100;
 
 /** Dias sem fazer a partir dos quais a planta "descansa" (nunca morre). */
 export const REST_AFTER = 3;
@@ -97,4 +99,40 @@ export function skyOf(hour: number): Sky {
 /** Borboletas que visitam o jardim conforme a sequência atual de dias. */
 export function butterfliesFor(streak: number): number {
   return streak >= 14 ? 3 : streak >= 7 ? 2 : streak >= 3 ? 1 : 0;
+}
+
+/** Nível do jardim inteiro: a soma de dias feitos de todas as plantas destrava elementos na cena. */
+export const GARDEN_LEVELS = [
+  { at: 0, name: "Terreno", unlock: "Um chão pronto para receber sementes." },
+  { at: 10, name: "Gramado", unlock: "Borboletas passam a visitar quando há sequência." },
+  { at: 40, name: "Jardim", unlock: "Um laguinho aparece, e vagalumes à noite." },
+  { at: 120, name: "Bosque", unlock: "Passarinhos cruzam o céu." },
+  { at: 300, name: "Santuário", unlock: "Lanternas acendem ao entardecer e à noite." },
+];
+
+export interface GardenLevel {
+  index: number;
+  name: string;
+  total: number;
+  next: number | null;
+  progress: number; // 0..1 até o próximo nível
+  unlock: string;
+}
+
+export function gardenLevel(plants: Plant[]): GardenLevel {
+  const total = plants.reduce((sum, p) => sum + p.days, 0);
+  let index = 0;
+  GARDEN_LEVELS.forEach((l, i) => {
+    if (total >= l.at) index = i;
+  });
+  const cur = GARDEN_LEVELS[index];
+  const nxt = GARDEN_LEVELS[index + 1];
+  return {
+    index,
+    name: cur.name,
+    total,
+    next: nxt ? nxt.at : null,
+    progress: nxt ? (total - cur.at) / (nxt.at - cur.at) : 1,
+    unlock: cur.unlock,
+  };
 }

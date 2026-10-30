@@ -232,7 +232,40 @@ function clearSchedulers() {
   dropTimer = noteTimer = null;
 }
 
+// iOS: o Web Audio some com o botão de silencioso e só toca como "mídia" se houver um <audio>
+// tocando. Um WAV mudo em loop + audioSession "playback" resolvem os dois casos.
+let keepAlive: HTMLAudioElement | null = null;
+function silentWav(): string {
+  const n = 8000; // 1 s a 8 kHz, 8 bits
+  const b = new Uint8Array(44 + n);
+  const dv = new DataView(b.buffer);
+  const w = (o: number, t: string) => [...t].forEach((ch, i) => (b[o + i] = ch.charCodeAt(0)));
+  w(0, "RIFF"); dv.setUint32(4, 36 + n, true); w(8, "WAVEfmt ");
+  dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true);
+  w(36, "data"); dv.setUint32(40, n, true);
+  b.fill(128, 44);
+  let bin = "";
+  b.forEach((v) => (bin += String.fromCharCode(v)));
+  return "data:audio/wav;base64," + btoa(bin);
+}
+function unlockPlayback() {
+  try {
+    const nav = navigator as Navigator & { audioSession?: { type: string } };
+    if (nav.audioSession) nav.audioSession.type = "playback";
+    if (!keepAlive) {
+      keepAlive = new Audio(silentWav());
+      keepAlive.loop = true;
+      keepAlive.setAttribute("playsinline", "");
+    }
+    void keepAlive.play().catch(() => {});
+  } catch {
+    /* sem suporte: segue só com Web Audio */
+  }
+}
+
 export function start() {
+  unlockPlayback();
   const c = build();
   if (!c || playing) return;
   token++;
@@ -258,6 +291,7 @@ export function stop(fadeSeconds = 0.5) {
   setTimeout(() => {
     if (mine !== token || !ac) return; // recomeçou nesse meio-tempo
     clearSchedulers();
+    keepAlive?.pause();
     void ac.suspend();
   }, fadeSeconds * 1000 + 600);
 }

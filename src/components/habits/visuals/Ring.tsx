@@ -71,8 +71,8 @@ export function Ring({ habit, value, frac, bursts, onBurstDone }: VisualProps) {
           fill="none"
           stroke={accentColor(habit.accent)}
           strokeWidth="2"
-          initial={{ r: 40, opacity: 0.6 }}
-          animate={{ r: 58, opacity: 0 }}
+          initial={{ r: b.dir > 0 ? 40 : 58, opacity: b.dir > 0 ? 0.6 : 0.45 }}
+          animate={{ r: b.dir > 0 ? 58 : 40, opacity: 0 }}
           transition={{ duration: 0.8, delay: b.delay, ease: "easeOut" }}
           onAnimationComplete={() => onBurstDone(b.id)}
         />

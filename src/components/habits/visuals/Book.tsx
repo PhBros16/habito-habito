@@ -119,9 +119,9 @@ export function Book({ habit, frac, bursts, onBurstDone }: VisualProps) {
             transformOrigin: "left center",
             transformStyle: "preserve-3d",
           }}
-          initial={{ rotateY: 0 }}
-          animate={{ rotateY: -180 }}
-          transition={{ duration: 0.7, delay: b.delay, ease: [0.45, 0, 0.2, 1] }}
+          initial={{ rotateY: b.dir > 0 ? 0 : -180 }}
+          animate={{ rotateY: b.dir > 0 ? -180 : 0 }}
+          transition={{ duration: b.dir > 0 ? 0.7 : 0.6, delay: b.delay, ease: [0.45, 0, 0.2, 1] }}
           onAnimationComplete={() => onBurstDone(b.id)}
         >
           <div

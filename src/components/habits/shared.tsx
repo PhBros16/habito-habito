@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { AccentKey, Habit } from "@/lib/types";
 
@@ -17,14 +18,24 @@ export interface HabitViewProps {
 
 /** Número que "rola" ao mudar. */
 export function AnimatedNumber({ value, className }: { value: number; className?: string }) {
+  // o número sobe ao crescer e desce ao diminuir (a direção vem da última mudança)
+  const [track, setTrack] = useState({ value, dir: 1 });
+  if (track.value !== value) setTrack({ value, dir: value > track.value ? 1 : -1 });
+  const dir = track.dir;
   return (
     <span className={`relative inline-flex overflow-hidden tabular-nums ${className ?? ""}`}>
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence mode="popLayout" initial={false} custom={dir}>
         <motion.span
           key={value}
-          initial={{ y: 14, opacity: 0, filter: "blur(3px)" }}
-          animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-          exit={{ y: -14, opacity: 0, filter: "blur(3px)" }}
+          custom={dir}
+          variants={{
+            enter: (d: number) => ({ y: 14 * d, opacity: 0, filter: "blur(3px)" }),
+            center: { y: 0, opacity: 1, filter: "blur(0px)" },
+            leave: (d: number) => ({ y: -14 * d, opacity: 0, filter: "blur(3px)" }),
+          }}
+          initial="enter"
+          animate="center"
+          exit="leave"
           transition={{
             type: "spring",
             stiffness: 420,

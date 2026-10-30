@@ -5,6 +5,7 @@ export interface Burst {
   id: number;
   r: number[]; // aleatórios sorteados no clique (nunca no render)
   delay: number; // segundos, para encadear várias rajadas
+  dir: 1 | -1; // 1 = avançou (adicionou), -1 = voltou (removeu)
 }
 
 export interface VisualProps {

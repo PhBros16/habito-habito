@@ -12,7 +12,7 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 - **Mini-hábitos com níveis**: fazer o mínimo já conta
 - **Modo dia difícil** (ícone de folha): reduz o dia ao essencial
 - **Frases contextuais** em quatro tons (gentil, estoico, direto, leve): além do horário, reagem ao contexto (voltando após dias sem fazer, segunda, domingo, início do mês, já começou o dia) e às conquistas (mínimo, ideal, recomeço). Linguagem de apoio à autonomia e elogio ao processo, sem culpa; as frases de evento não repetem as últimas mostradas. Frase de identidade por hábito
-- **12 visuais numéricos e 3 de check** (copo, livro, anel, contas, lua, planta, passos, pote, chama, halteres, ampulheta, coração; selo, nascer do sol, lâmpada), cada um com som próprio e **animação de retorno**: ao remover, o visual desfaz o gesto (páginas voltam, copo esvazia, moeda sai, planta murcha). O botão "−" desfaz o último passo adicionado
+- **15 visuais numéricos e 6 de check** (copo, livro, anel, contas, lua, planta, passos, pote, chama, barra, ampulheta, coração, pista, lótus, montanha; selo, sol, lâmpada, escudo, cápsula, brilho). Ao digitar o nome ("academia", "corrida", "meditar"...) o app sugere o visual, cada um com som próprio e **animação de retorno**: ao remover, o visual desfaz o gesto (páginas voltam, copo esvazia, moeda sai, planta murcha). O botão "−" desfaz o último passo adicionado
 - **16 modelos de hábito** em quatro grupos (corpo, mente, rotina, dinheiro)
 - **Sons de feedback** sintetizados no próprio navegador (sem arquivos, sem licença)
 - **Som ambiente** (ícone de ondas no topo): mixer com chuva, vento, ondas e um piano generativo (notas de uma escala pentatônica com reverb), quatro predefinições, volume por camada e timer para desligar sozinho com fade. Tudo gerado no aparelho, offline; os volumes ficam salvos e o som nunca começa sozinho
@@ -23,6 +23,9 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 - **Retrospectiva semanal** (segunda a domingo): dias mantidos, anéis por dia, média e comparação com a semana anterior, melhor dia, hábito mais feito, humor médio e a frase de identidade com os "votos" da semana. Um convite aparece de domingo a terça, uma vez por semana; também há um atalho nas estatísticas
 - **Jardim vivo**: cada hábito vira uma planta (flor, broto ou arbusto) que cresce com os dias feitos, de semente a frondosa. Nada morre: sem fazer por 3 dias a planta só "descansa" e volta a crescer quando você volta. Céu muda com a hora (amanhecer, dia, entardecer, noite com vaga-lumes) e borboletas visitam quando a sequência passa de 3, 7 e 14 dias
 - **Pausas planejadas** (Ajustes → Pausas): viagem, doença, semana corrida. Dias em pausa não quebram a sequência, não entram nas médias, retrospectiva nem padrões, e as plantas dormem sem murchar. Podem ser futuras, passadas ou abertas ("até eu voltar"); se você fizer algo num dia de pausa, ele conta normalmente
+- **Metas por semana ou mês** ("academia 3x por semana"), unidades em lista fechada, âncora "se-então" por hábito e checagem de obstáculos quando um hábito trava há 3+ dias
+- **Detalhes por hábito**: calendário de 12 semanas, sequência, taxa, dia da semana mais forte, totais e uma leitura honesta
+- **Diário** ligado ao check-in de humor (nota livre, fica só no aparelho) e tela **Sobre** com o conceito, o nome e as fontes científicas
 - **Backup em JSON** nos ajustes
 - **Estatísticas** (ícone de gráfico no topo), tudo calculado localmente:
   - Dias seguidos, melhor sequência e conclusão dos últimos 30 dias
@@ -89,4 +92,4 @@ scripts/
 ## Próximas fases
 
 - **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos
-- **Fase 3:** retrospectiva anual, diário de uma linha
+- **Fase 3:** retrospectiva anual

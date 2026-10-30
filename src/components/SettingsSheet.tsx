@@ -50,10 +50,14 @@ export function SettingsSheet({
   open,
   onClose,
   onOpenPauses,
+  onOpenAbout,
+  onOpenDiary,
 }: {
   open: boolean;
   onClose: () => void;
   onOpenPauses: () => void;
+  onOpenAbout: () => void;
+  onOpenDiary: () => void;
 }) {
   const { settings, updateSettings, exportJson } = useHabits();
 
@@ -103,6 +107,18 @@ export function SettingsSheet({
               animate={{ x: settings.sound ? 24 : 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 32 }}
             />
+          </button>
+        </section>
+
+        <section className="flex flex-col gap-2.5">
+          <h3 className="text-sm text-muted">Diário e sobre</h3>
+          <button type="button" onClick={onOpenDiary} className="rounded-2xl border border-line px-4 py-3 text-left text-sm">
+            Seu diário
+            <span className="block text-[13px] text-muted">As anotações que você escreveu junto do humor.</span>
+          </button>
+          <button type="button" onClick={onOpenAbout} className="rounded-2xl border border-line px-4 py-3 text-left text-sm">
+            Sobre o app
+            <span className="block text-[13px] text-muted">Conceito, o motivo do nome e a ciência por trás.</span>
           </button>
         </section>
 

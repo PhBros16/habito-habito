@@ -67,7 +67,7 @@ const reveal = {
  * Check-in do dia: um toque para o humor, um para a energia. Depois de respondido,
  * recolhe num resumo de uma linha (tocar nele reabre para editar).
  */
-export function CheckIn({ date, isToday }: { date: string; isToday: boolean }) {
+export function CheckIn({ date, isToday, onOpenDiary }: { date: string; isToday: boolean; onOpenDiary?: () => void }) {
   const { getCheckin, setCheckin } = useHabits();
   const fb = useFeedback();
   const c = getCheckin(date);
@@ -191,6 +191,71 @@ export function CheckIn({ date, isToday }: { date: string; isToday: boolean }) {
           </motion.button>
         )}
       </AnimatePresence>
+      <Note key={date} date={date} onOpenDiary={onOpenDiary} />
     </motion.section>
+  );
+}
+
+/** Diário do dia: uma anotação livre, salva sozinha enquanto você escreve. */
+function Note({ date, onOpenDiary }: { date: string; onOpenDiary?: () => void }) {
+  const { getCheckin, setCheckin } = useHabits();
+  const saved = getCheckin(date)?.note ?? "";
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(saved);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const change = (v: string) => {
+    setText(v);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCheckin(date, { note: v }), 500);
+  };
+  const flush = () => {
+    if (timer.current) clearTimeout(timer.current);
+    if (text !== saved) setCheckin(date, { note: text });
+  };
+
+  return (
+    <div className="border-t border-line px-4 py-3">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => {
+          if (open) flush();
+          setOpen((o) => !o);
+        }}
+        className="flex w-full items-center gap-2 text-left text-sm text-muted"
+      >
+        <span aria-hidden>✎</span>
+        <span className="min-w-0 flex-1 truncate">{saved && !open ? saved : "Escrever sobre o dia (opcional)"}</span>
+        <span className="text-xs">{open ? "fechar" : saved ? "editar" : ""}</span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div {...reveal} className="overflow-hidden">
+            <textarea
+              aria-label="Diário do dia"
+              value={text}
+              onChange={(e) => change(e.target.value)}
+              onBlur={flush}
+              rows={4}
+              maxLength={1000}
+              placeholder="O que foi bom hoje? O que pesou? Pode ser uma linha só."
+              className="mt-3 w-full resize-none rounded-2xl border border-line bg-transparent px-4 py-3 text-[15px] leading-snug outline-none focus:border-sage"
+            />
+            <div className="mt-1.5 flex items-center justify-between text-[12px] text-muted">
+              <span>Fica só no seu aparelho.</span>
+              {onOpenDiary && (
+                <button type="button" onClick={onOpenDiary} className="underline underline-offset-2">
+                  Ver diário
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

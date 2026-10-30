@@ -45,15 +45,17 @@ export function StatsSheet({
   onClose,
   today,
   onOpenReview,
+  onOpenHabit,
 }: {
   open: boolean;
   onClose: () => void;
   today: string;
   onOpenReview: () => void;
+  onOpenHabit?: (id: string) => void;
 }) {
   return (
     <Sheet open={open} onClose={onClose} title="Seu ritmo">
-      <StatsBody today={today} onOpenReview={onOpenReview} />
+      <StatsBody today={today} onOpenReview={onOpenReview} onOpenHabit={onOpenHabit} />
     </Sheet>
   );
 }
@@ -80,7 +82,7 @@ function Section({
   );
 }
 
-function StatsBody({ today, onOpenReview }: { today: string; onOpenReview: () => void }) {
+function StatsBody({ today, onOpenReview, onOpenHabit }: { today: string; onOpenReview: () => void; onOpenHabit?: (id: string) => void }) {
   const { habits, getValue, getCheckin, isPaused } = useHabits();
 
   const data = useMemo(
@@ -243,7 +245,12 @@ function StatsBody({ today, onOpenReview }: { today: string; onOpenReview: () =>
       <Section title="Por hábito" index={3}>
         <div className="flex flex-col gap-2.5">
           {perHabit.map((s) => (
-            <div key={s.habit.id} className="rounded-2xl border border-line p-3.5">
+            <button
+              key={s.habit.id}
+              type="button"
+              onClick={() => onOpenHabit?.(s.habit.id)}
+              className="block w-full rounded-2xl border border-line p-3.5 text-left"
+            >
               <div className="flex items-center justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-2">
                   <i
@@ -268,8 +275,9 @@ function StatsBody({ today, onOpenReview }: { today: string; onOpenReview: () =>
               <p className="mt-2.5 text-[13px] text-muted">
                 Sequência {s.current} · melhor {s.best} · {s.total}{" "}
                 {s.total === 1 ? "dia feito" : "dias feitos"}
+                {onOpenHabit && <span className="float-right text-muted">detalhes →</span>}
               </p>
-            </div>
+            </button>
           ))}
         </div>
       </Section>

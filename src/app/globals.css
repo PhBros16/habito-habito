@@ -62,12 +62,24 @@
   --dur-slow: 640ms;
 }
 
+/* iOS dá zoom ao focar campos com fonte menor que 16px e ao tocar duas vezes. */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
 html {
+  overflow-x: hidden;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
   background: var(--bg);
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
+  overflow-x: clip;
+  max-width: 100vw;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);

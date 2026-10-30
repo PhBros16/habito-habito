@@ -3,7 +3,8 @@
 import { useId } from "react";
 import { motion } from "motion/react";
 import { accentColor } from "./habits/shared";
-import { butterfliesFor, skyOf, type Plant, type Sky } from "@/lib/garden";
+import { useSyncExternalStore } from "react";
+import { TREE_DAYS, butterfliesFor, gardenLevel, skyOf, type Plant, type Sky } from "@/lib/garden";
 
 const SKY: Record<Sky, [string, string]> = {
   dawn: [
@@ -19,8 +20,8 @@ const SKY: Record<Sky, [string, string]> = {
     "color-mix(in srgb, var(--clay) 24%, var(--bg))",
   ],
   night: [
-    "color-mix(in srgb, var(--ink) 78%, var(--lilac))",
-    "color-mix(in srgb, var(--ink) 58%, var(--water))",
+    "color-mix(in srgb, var(--lilac) 34%, var(--bg))",
+    "color-mix(in srgb, var(--water) 16%, var(--bg))",
   ],
 };
 
@@ -43,6 +44,8 @@ function PlantArt({ p }: { p: Plant }) {
   const cx = 50 - lean * 1.2;
   const cy = 140 - h * 0.55;
   const leaf = LEAF(p.resting);
+
+  if (p.days >= TREE_DAYS) return <TreeArt p={p} color={color} leaf={leaf} />;
 
   if (sprout) {
     return (
@@ -122,6 +125,55 @@ function PlantArt({ p }: { p: Plant }) {
   );
 }
 
+
+/** Árvore: depois de 100 dias o hábito vira árvore; quanto mais velha, mais copa, flores e frutos. */
+function TreeArt({ p, color, leaf }: { p: Plant; color: string; leaf: string }) {
+  const age = Math.min(1, (p.days - TREE_DAYS) / 265); // 100 → 365 dias
+  const trunkH = 62 + age * 22;
+  const topY = 140 - trunkH;
+  const r = 20 + age * 12;
+  const trunk = "color-mix(in srgb, var(--clay) 55%, var(--ink))";
+  const crowns: [number, number, number][] = [[0, 0, 1], [-r * 0.8, r * 0.35, 0.8], [r * 0.8, r * 0.35, 0.8], [-r * 0.35, -r * 0.55, 0.78], [r * 0.4, -r * 0.5, 0.74]];
+  return (
+    <g>
+      {p.doneToday && (
+        <motion.circle cx={50} cy={topY} r={r * 1.7} fill={color} animate={{ opacity: [0.08, 0.22, 0.08] }} transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }} />
+      )}
+      <ellipse cx="50" cy="140" rx={16 + age * 8} ry="4" fill="var(--ink)" opacity="0.08" />
+      <path d={`M50 140 C 48 ${140 - trunkH * 0.5}, 53 ${140 - trunkH * 0.8}, 50 ${topY + 6}`} stroke={trunk} strokeWidth={5 + age * 4} fill="none" strokeLinecap="round" />
+      <path d={`M50 ${140 - trunkH * 0.5} q 10 -8 16 -16 M50 ${140 - trunkH * 0.6} q -9 -6 -14 -15`} stroke={trunk} strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      {crowns.map(([dx, dy, k], i) => (
+        <circle key={i} cx={50 + dx} cy={topY + dy} r={r * k} style={{ fill: leaf }} opacity={0.94 - i * 0.03} />
+      ))}
+      {Array.from({ length: 4 + Math.round(age * 5) }, (_, i) => (
+        <circle key={i} cx={50 + Math.cos(i * 2.3) * r * 0.9} cy={topY + Math.sin(i * 2.3) * r * 0.7} r={2.2 + age} fill={color} opacity={p.resting ? 0.5 : 1} />
+      ))}
+      {p.days >= 365 && (
+        <motion.circle cx="50" cy={topY - r - 6} r="3" fill="var(--sun)" animate={{ opacity: [0.4, 1, 0.4], scale: [0.9, 1.3, 0.9] }} transition={{ duration: 2.4, repeat: Infinity }} style={{ transformBox: "fill-box", transformOrigin: "center" }} />
+      )}
+    </g>
+  );
+}
+
+function Bird({ i, w, h }: { i: number; w: number; h: number }) {
+  const y = h * (0.12 + 0.1 * i);
+  return (
+    <motion.g initial={{ x: -20, y }} animate={{ x: w + 20, y: [y, y - 8, y + 4, y] }} transition={{ duration: 22 + i * 7, repeat: Infinity, delay: i * 6, ease: "linear" }}>
+      <motion.path d="M-6 0 Q -3 -4 0 0 Q 3 -4 6 0" fill="none" stroke="var(--ink)" strokeOpacity="0.55" strokeWidth="1.4" strokeLinecap="round" animate={{ scaleY: [1, -0.6, 1] }} transition={{ duration: 0.7, repeat: Infinity }} style={{ transformBox: "fill-box", transformOrigin: "center" }} />
+    </motion.g>
+  );
+}
+
+function Lantern({ x, y }: { x: number; y: number }) {
+  return (
+    <g>
+      <path d={`M${x} ${y - 14} V${y - 6}`} stroke="var(--ink)" strokeOpacity="0.35" strokeWidth="1" />
+      <motion.circle cx={x} cy={y} r="9" fill="var(--sun)" animate={{ opacity: [0.12, 0.28, 0.12] }} transition={{ duration: 3, repeat: Infinity }} />
+      <rect x={x - 3} y={y - 5} width="6" height="9" rx="2.4" fill="var(--sun)" opacity="0.85" />
+    </g>
+  );
+}
+
 function Butterfly({ i, w, h }: { i: number; w: number; h: number }) {
   const colors = ["sun", "lilac", "clay"] as const;
   const c = accentColor(colors[i % 3]);
@@ -140,19 +192,38 @@ function Butterfly({ i, w, h }: { i: number; w: number; h: number }) {
   );
 }
 
+function subscribeTheme(cb: () => void) {
+  const mo = new MutationObserver(cb);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  return () => mo.disconnect();
+}
+function useIsDark(): boolean {
+  return useSyncExternalStore(
+    subscribeTheme,
+    () => document.documentElement.getAttribute("data-theme") === "dark",
+    () => false
+  );
+}
+
 export function GardenScene({
   plants,
   hour,
   streak,
   compact = false,
+  onPick,
 }: {
   plants: Plant[];
   hour: number;
   streak: number;
   compact?: boolean;
+  onPick?: (habitId: string) => void;
 }) {
   const id = useId();
-  const sky = skyOf(hour);
+  const level = gardenLevel(plants).index;
+  const dark = useIsDark();
+  // O céu obedece ao tema: escuro = noite, claro = dia (com alvorada/entardecer só no claro).
+  const raw = skyOf(hour);
+  const sky: Sky = dark ? "night" : raw === "night" ? "day" : raw;
   const W = 360;
   const H = compact ? 132 : 210;
   const G = H - (compact ? 30 : 40); // linha do chão
@@ -181,8 +252,8 @@ export function GardenScene({
               cx={(i * 71 + 23) % (W - 20) + 10}
               cy={((i * 37) % (G * 0.6)) + 8}
               r={0.9 + (i % 3) * 0.4}
-              fill="var(--bg)"
-              animate={{ opacity: [0.25, 0.9, 0.25] }}
+              fill="var(--ink)"
+              animate={{ opacity: [0.15, 0.7, 0.15] }}
               transition={{ duration: 3 + (i % 4), repeat: Infinity, delay: i * 0.3 }}
             />
           ))}
@@ -195,18 +266,38 @@ export function GardenScene({
       {/* colinas */}
       <path
         d={`M0 ${G - 6} C 80 ${G - 22} 160 ${G - 8} 240 ${G - 18} S 330 ${G - 10} ${W} ${G - 16} V ${H} H0 Z`}
-        style={{ fill: night ? "color-mix(in srgb, var(--sage) 22%, var(--ink))" : "color-mix(in srgb, var(--sage) 20%, var(--bg))" }}
+        style={{ fill: night ? "color-mix(in srgb, var(--sage) 14%, var(--bg))" : "color-mix(in srgb, var(--sage) 20%, var(--bg))" }}
       />
       <path
         d={`M0 ${G + 4} C 90 ${G - 8} 170 ${G + 8} 250 ${G - 2} S 330 ${G + 4} ${W} ${G - 2} V ${H} H0 Z`}
-        style={{ fill: night ? "color-mix(in srgb, var(--sage) 30%, var(--ink))" : "color-mix(in srgb, var(--sage) 36%, var(--bg))" }}
+        style={{ fill: night ? "color-mix(in srgb, var(--sage) 22%, var(--bg))" : "color-mix(in srgb, var(--sage) 36%, var(--bg))" }}
       />
+
+      {/* laguinho (nível Jardim) */}
+      {level >= 2 && (
+        <g>
+          <ellipse cx={W - 70} cy={G + 8} rx={compact ? 26 : 34} ry={compact ? 4 : 6} fill="color-mix(in srgb, var(--water) 40%, var(--bg))" opacity="0.85" />
+          <motion.ellipse cx={W - 70} cy={G + 8} fill="none" stroke="var(--water)" strokeWidth="0.8" animate={{ rx: [8, 28], ry: [1.5, 5], opacity: [0.6, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeOut" }} />
+        </g>
+      )}
+      {level >= 3 && !night && Array.from({ length: 2 }, (_, i) => <Bird key={i} i={i} w={W} h={G} />)}
 
       {plants.map((p, i) => {
         const x = slot * (i + 0.5) - pw / 2;
         const y = G + 12 - ph;
         return (
-          <svg key={p.habit.id} x={x} y={y} width={pw} height={ph} viewBox="0 0 100 140" overflow="visible">
+          <svg
+            key={p.habit.id}
+            x={x}
+            y={y}
+            width={pw}
+            height={ph}
+            viewBox="0 0 100 140"
+            overflow="visible"
+            onClick={onPick ? () => onPick(p.habit.id) : undefined}
+            style={onPick ? { cursor: "pointer" } : undefined}
+          >
+            {onPick && <rect width="100" height="140" fill="transparent" />}
             <motion.g
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -225,7 +316,9 @@ export function GardenScene({
         );
       })}
 
-      {night &&
+      {level >= 4 && (sky === "dusk" || night) && [0.22, 0.5, 0.82].map((f, i) => <Lantern key={i} x={W * f} y={G - 34 - (i % 2) * 10} />)}
+
+      {night && level >= 2 &&
         Array.from({ length: compact ? 3 : 5 }, (_, i) => (
           <motion.circle
             key={i}

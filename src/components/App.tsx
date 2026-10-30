@@ -11,6 +11,10 @@ import { HabitCard } from "./habits/HabitCard";
 import { WeekStrip } from "./WeekStrip";
 import { Celebration } from "./Celebration";
 import { AddHabitSheet } from "./AddHabitSheet";
+import { DiarySheet } from "./DiarySheet";
+import { AboutSheet } from "./AboutSheet";
+import { HabitDetailSheet } from "./HabitDetailSheet";
+import { goalOf, isPeriodic, periodDone } from "@/lib/periods";
 import { SettingsSheet } from "./SettingsSheet";
 import { StatsSheet } from "./StatsSheet";
 import { WeekReviewSheet } from "./WeekReviewSheet";
@@ -19,7 +23,7 @@ import { GardenCard, GardenSheet } from "./GardenSheet";
 import { PauseSheet } from "./PauseSheet";
 import { activePause, rangeText } from "@/lib/pauses";
 import { isPlaying, subscribe } from "@/lib/ambient";
-import { reviewWeekStart } from "@/lib/stats";
+import { missedRun, reviewWeekStart } from "@/lib/stats";
 import { CheckIn } from "./CheckIn";
 import { isLowDay } from "@/lib/checkin";
 import { ChartIcon, LeafIcon, PlusIcon, SlidersIcon, WaveIcon } from "./icons";
@@ -41,6 +45,13 @@ function Home() {
   return ready ? <Main /> : <Skeleton />;
 }
 
+const OBSTACLES: { label: string; action: "edit" | "tip"; tip: string }[] = [
+  { label: "Estava difícil demais", action: "edit", tip: "" },
+  { label: "Esqueci", action: "edit", tip: "" },
+  { label: "Sem tempo", action: "tip", tip: "Tente a versão de 1 minuto: o mínimo conta." },
+  { label: "Sem energia", action: "tip", tip: "Ligue o dia difícil quando precisar: só o essencial." },
+];
+
 function Main() {
   const {
     habits,
@@ -48,6 +59,8 @@ function Main() {
     setValue,
     addHabit,
     removeHabit,
+    updateHabit,
+    isPaused,
     settings,
     updateSettings,
     getCheckin,
@@ -66,12 +79,16 @@ function Main() {
   const isToday = selected === today;
 
   const [addOpen, setAddOpen] = useState(false);
+  const [editing, setEditing] = useState<Habit | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [ambientOpen, setAmbientOpen] = useState(false);
   const [gardenOpen, setGardenOpen] = useState(false);
   const [pauseOpen, setPauseOpen] = useState(false);
+  const [diaryOpen, setDiaryOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const ambientOn = useSyncExternalStore(subscribe, isPlaying, () => false);
   const [celebrate, setCelebrate] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
@@ -93,8 +110,10 @@ function Main() {
     (date: string) => {
       const set = hardDay && date === today && essentials.length > 0 ? essentials : habits;
       if (set.length === 0) return 0;
-      const done = set.filter((h) => levelOf(h, getValue(h.id, date)) >= 1).length;
-      return done / set.length;
+      const live = set.filter((h) => !isPeriodic(h) || levelOf(h, getValue(h.id, date)) >= 1);
+      if (live.length === 0) return 0;
+      const done = live.filter((h) => levelOf(h, getValue(h.id, date)) >= 1).length;
+      return done / live.length;
     },
     [habits, essentials, hardDay, today, getValue]
   );
@@ -125,6 +144,7 @@ function Main() {
     [isToday, habits.length, today, ratio]
   );
   const dayContext: PhraseMoment = (() => {
+    if (visible.length > 0 && doneCount === visible.length) return "allDone";
     if (doneCount > 0) return "partial";
     if (returning) return "returning";
     if (parseKey(today).getDate() === 1) return "monthStart";
@@ -137,6 +157,18 @@ function Main() {
     if (hardDay || lowDay || pauseNow) return phraseFor(settings.tone, "hardDay", today);
     return phraseFor(settings.tone, dayContext, today);
   }, [isToday, hardDay, lowDay, pauseNow, settings.tone, dayContext, today]);
+
+  let stuck: { habit: Habit; days: number } | null = null;
+  if (isToday && !pauseNow && !hardDay) {
+    for (const h of visible) {
+      if (settings.obstacleSeen[h.id] === today) continue;
+      const days = missedRun(h, today, getValue, isPaused);
+      if (days >= 3) {
+        stuck = { habit: h, days };
+        break;
+      }
+    }
+  }
 
   const showToast = (text: string) => {
     const id = ++toastSeq.current;
@@ -172,12 +204,12 @@ function Main() {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-36 pt-[max(1.25rem,env(safe-area-inset-top))]">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-16 pt-[max(1.25rem,env(safe-area-inset-top))]">
       {/* topo */}
-      <header className="flex items-start justify-between gap-4">
+      <header className="flex items-start justify-between gap-2">
         <div>
           <p className="whitespace-nowrap text-[13px] text-muted first-letter:uppercase">{longDate(selected)}</p>
-          <h1 className="font-display mt-1 text-4xl leading-tight">
+          <h1 className="font-display mt-1 text-[clamp(1.85rem,9vw,2.25rem)] leading-tight">
             {isToday ? greetingOf(moment) : relativeLabel(selected, today)}
           </h1>
         </div>
@@ -216,7 +248,12 @@ function Main() {
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="font-display text-xl leading-snug text-ink/90"
             >
-              {phrase}
+              {phrase.split(/ \((?=[^()]*\)$)/)[0]}
+              {/ \([^()]*\)$/.test(phrase) && (
+                <span className="mt-1.5 block font-sans text-[12px] leading-snug text-muted">
+                  {phrase.match(/ \(([^()]*)\)$/)?.[1]}
+                </span>
+              )}
             </motion.p>
           ) : (
             <motion.button
@@ -279,6 +316,60 @@ function Main() {
         )}
       </AnimatePresence>
 
+      {/* dia difícil ligado */}
+      <AnimatePresence>
+        {isToday && hardDay && !pauseNow && (
+          <motion.div
+            key="hard"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-5 rounded-3xl border p-4" style={{ borderColor: "var(--sage)" }}>
+              <p className="font-display text-lg">Dia difícil ligado</p>
+              <p className="mt-1 text-sm leading-snug text-muted">
+                {essentials.length > 0
+                  ? `Hoje só ${essentials.length === 1 ? "o hábito essencial aparece" : "os hábitos essenciais aparecem"}. Os outros voltam amanhã, sem nenhuma culpa.`
+                  : "Hoje o mínimo de cada hábito já é uma vitória. Escolha abaixo o que fica na tela hoje."}
+              </p>
+              {habits.length > 1 && (
+                <div className="mt-3">
+                  <p className="text-xs text-muted">Toque para escolher o que fica hoje:</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {habits.map((h) => (
+                      <button
+                        key={h.id}
+                        type="button"
+                        aria-pressed={h.essential}
+                        onClick={() => updateHabit(h.id, { essential: !h.essential })}
+                        className="rounded-full border px-3 py-1.5 text-sm transition-colors"
+                        style={{
+                          borderColor: h.essential ? "var(--sage)" : "var(--line)",
+                          background: h.essential ? "color-mix(in srgb, var(--sage) 18%, transparent)" : "transparent",
+                          color: h.essential ? "var(--ink)" : "var(--muted)",
+                        }}
+                      >
+                        {h.essential ? "✓ " : ""}
+                        {h.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => updateSettings({ hardDayDate: null })}
+                className="mt-3 rounded-full border border-line px-4 py-2 text-sm text-muted"
+              >
+                Desligar
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* convite para a retrospectiva: domingo, segunda e terça, uma vez por semana */}
       <AnimatePresence>
         {retroOffer && (
@@ -318,7 +409,7 @@ function Main() {
 
       {/* check-in de humor e energia */}
       <div className="mt-5">
-        <CheckIn key={selected} date={selected} isToday={isToday} />
+        <CheckIn key={selected} date={selected} isToday={isToday} onOpenDiary={() => setDiaryOpen(true)} />
       </div>
 
       {/* oferta gentil em dia pesado */}
@@ -361,6 +452,50 @@ function Main() {
         )}
       </AnimatePresence>
 
+      {/* checagem de obstáculos: hábito parado há 3+ dias */}
+      <AnimatePresence>
+        {stuck && (
+          <motion.div
+            key={`stuck-${stuck.habit.id}`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-5 rounded-3xl border border-line p-4">
+              <p className="font-display text-lg">{stuck.habit.name} travou?</p>
+              <p className="mt-1 text-sm leading-snug text-muted">
+                Faz {stuck.days} dias que ele não acontece. Sem julgamento: o que costuma atrapalhar? Cada resposta tem um ajuste pequeno.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {OBSTACLES.map((o) => (
+                  <button
+                    key={o.label}
+                    type="button"
+                    onClick={() => {
+                      updateSettings({ obstacleSeen: { ...settings.obstacleSeen, [stuck.habit.id]: today } });
+                      if (o.action === "edit") setEditing(stuck.habit);
+                      else showToast(o.tip);
+                    }}
+                    className="rounded-full border border-line px-3.5 py-2 text-[13px]"
+                  >
+                    {o.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => updateSettings({ obstacleSeen: { ...settings.obstacleSeen, [stuck.habit.id]: today } })}
+                  className="px-2 py-2 text-[13px] text-muted"
+                >
+                  Agora não
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* resumo */}
       <div className="mt-5 flex items-center justify-between px-1 text-sm text-muted">
         <span>
@@ -368,7 +503,13 @@ function Main() {
             ? "Nenhum hábito ainda"
             : `${doneCount} de ${visible.length} ${visible.length === 1 ? "hábito" : "hábitos"}`}
         </span>
-        {useEssentialOnly && <span style={{ color: "var(--sage)" }}>só o essencial</span>}
+        {useEssentialOnly ? (
+          <span style={{ color: "var(--sage)" }}>só o essencial</span>
+        ) : (
+          <button type="button" onClick={() => setAddOpen(true)} className="flex items-center gap-1 text-[13px]">
+            <PlusIcon /> Novo
+          </button>
+        )}
       </div>
 
       {/* hábitos */}
@@ -382,6 +523,14 @@ function Main() {
                 value={getValue(h.id, selected)}
                 onChange={(v) => handleChange(h, v)}
                 onRemove={() => removeHabit(h.id)}
+                onEdit={() => setEditing(h)}
+                onDetails={() => setDetailId(h.id)}
+                onToggleEssential={() => updateHabit(h.id, { essential: !h.essential })}
+                progress={
+                  isPeriodic(h)
+                    ? { done: periodDone(h, selected, getValue), goal: goalOf(h), label: h.period === "week" ? "nesta semana" : "neste mês" }
+                    : null
+                }
               />
             ))}
           </AnimatePresence>
@@ -402,17 +551,14 @@ function Main() {
         </motion.div>
       )}
 
-      {/* botão de adicionar */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      {/* botão de adicionar (na página, não flutua) */}
+      <div className="mt-6 flex justify-center">
         <motion.button
           type="button"
           onClick={() => setAddOpen(true)}
           whileTap={{ scale: 0.95 }}
           whileHover={{ y: -2 }}
-          initial={{ y: 40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 24, delay: 0.3 }}
-          className="pointer-events-auto flex items-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-medium shadow-[var(--shadow)]"
+          className="flex items-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-medium shadow-[var(--shadow)]"
           style={{ background: "var(--ink)", color: "var(--bg)" }}
         >
           <PlusIcon /> Novo hábito
@@ -439,13 +585,32 @@ function Main() {
       </div>
 
       <Celebration show={celebrate !== null} phrase={celebrate ?? ""} />
-      <AddHabitSheet open={addOpen} onClose={() => setAddOpen(false)} onAdd={addHabit} />
+      <HabitDetailSheet id={detailId} today={today} onClose={() => setDetailId(null)} />
+      <DiarySheet open={diaryOpen} onClose={() => setDiaryOpen(false)} />
+      <AddHabitSheet
+        open={addOpen || !!editing}
+        onClose={() => {
+          setAddOpen(false);
+          setEditing(null);
+        }}
+        onAdd={addHabit}
+        editing={editing}
+        onSave={updateHabit}
+      />
       <SettingsSheet
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         onOpenPauses={() => {
           setSettingsOpen(false);
           setPauseOpen(true);
+        }}
+        onOpenAbout={() => {
+          setSettingsOpen(false);
+          setAboutOpen(true);
+        }}
+        onOpenDiary={() => {
+          setSettingsOpen(false);
+          setDiaryOpen(true);
         }}
       />
       <PauseSheet open={pauseOpen} onClose={() => setPauseOpen(false)} today={today} />
@@ -457,7 +622,12 @@ function Main() {
           setStatsOpen(false);
           setReviewOpen(true);
         }}
+        onOpenHabit={(id) => {
+          setStatsOpen(false);
+          setDetailId(id);
+        }}
       />
+      <AboutSheet open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <GardenSheet open={gardenOpen} onClose={() => setGardenOpen(false)} today={today} />
       <AmbientSheet open={ambientOpen} onClose={() => setAmbientOpen(false)} />
       <WeekReviewSheet open={reviewOpen} onClose={() => setReviewOpen(false)} weekStart={reviewStart} />

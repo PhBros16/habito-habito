@@ -13,10 +13,15 @@ interface Props {
   value: number;
   onChange: (v: number) => void;
   onRemove: () => void;
+  onEdit?: () => void;
+  onToggleEssential?: () => void;
+  onDetails?: () => void;
+  /** progresso da meta semanal/mensal, quando o hábito tem frequência */
+  progress?: { done: number; goal: number; label: string } | null;
   readOnly?: boolean;
 }
 
-export function HabitCard({ habit, value, onChange, onRemove, readOnly }: Props) {
+export function HabitCard({ habit, value, onChange, onRemove, onEdit, onToggleEssential, onDetails, progress, readOnly }: Props) {
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const View = habit.kind === "check" ? StampCheck : NumericHabit;
@@ -59,6 +64,7 @@ export function HabitCard({ habit, value, onChange, onRemove, readOnly }: Props)
               </span>
             )}
           </div>
+          {habit.anchor && <p className="mt-1 text-[13px] text-muted">↳ {habit.anchor}</p>}
           {habit.identity && (
             <p className="mt-1 text-[13px] italic text-muted">{habit.identity}</p>
           )}
@@ -77,9 +83,24 @@ export function HabitCard({ habit, value, onChange, onRemove, readOnly }: Props)
             <motion.div
               initial={{ opacity: 0, scale: 0.92, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="card absolute right-0 top-9 z-10 w-40 overflow-hidden p-1 text-sm"
+              className="card absolute right-0 top-9 z-10 w-44 overflow-hidden p-1 text-sm"
               style={{ borderRadius: 16 }}
             >
+              {onDetails && (
+                <button type="button" onClick={() => { setMenu(false); onDetails(); }} className="w-full rounded-xl px-3 py-2 text-left hover:bg-surface-2">
+                  Ver detalhes
+                </button>
+              )}
+              {onEdit && (
+                <button type="button" onClick={() => { setMenu(false); onEdit(); }} className="w-full rounded-xl px-3 py-2 text-left hover:bg-surface-2">
+                  Editar
+                </button>
+              )}
+              {onToggleEssential && (
+                <button type="button" onClick={() => { setMenu(false); onToggleEssential(); }} className="w-full rounded-xl px-3 py-2 text-left hover:bg-surface-2">
+                  {habit.essential ? "Tirar de essencial" : "Marcar essencial"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -96,6 +117,22 @@ export function HabitCard({ habit, value, onChange, onRemove, readOnly }: Props)
         </div>
       </header>
 
+      {progress && (
+        <div className="-mt-1 mb-3 flex items-center gap-2 text-[12px] text-muted" aria-label={`${progress.done} de ${progress.goal} ${progress.label}`}>
+          <span className="flex gap-1">
+            {Array.from({ length: Math.min(progress.goal, 12) }, (_, i) => (
+              <i
+                key={i}
+                className="block h-1.5 w-4 rounded-full transition-colors"
+                style={{ background: i < progress.done ? accentColor(habit.accent) : "var(--line)" }}
+              />
+            ))}
+          </span>
+          <span>
+            {progress.done} de {progress.goal} {progress.label}
+          </span>
+        </div>
+      )}
       <View habit={habit} value={value} onChange={onChange} readOnly={readOnly} />
     </motion.article>
   );

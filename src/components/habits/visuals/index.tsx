@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { Habit, NumericVisualKey } from "@/lib/types";
 import type { SoundName } from "@/lib/sound";
+import { unitSteps } from "@/lib/units";
 import { Beads } from "./Beads";
 import { Book } from "./Book";
 import { Flame } from "./Flame";
@@ -13,6 +14,9 @@ import { Plant } from "./Plant";
 import { Ring } from "./Ring";
 import { Steps } from "./Steps";
 import { Weights } from "./Weights";
+import { Track } from "./Track";
+import { Lotus } from "./Lotus";
+import { Mountain } from "./Mountain";
 import type { VisualProps } from "./types";
 
 export interface VisualDef {
@@ -39,6 +43,9 @@ export const VISUALS: Record<NumericVisualKey, VisualDef> = {
   weights: { name: "Barra", hint: "treino, força", Component: Weights, bursts: true, add: "clack", remove: "unclack" },
   hourglass: { name: "Ampulheta", hint: "tempo de foco", Component: Hourglass, bursts: true, add: "sand", remove: "sandBack" },
   heart: { name: "Coração", hint: "gratidão, afeto", Component: Heart, bursts: true, add: "beat", remove: "ebb" },
+  track: { name: "Pista", hint: "corrida, ciclismo", Component: Track, bursts: false, add: "step", remove: "unstep" },
+  lotus: { name: "Lótus", hint: "meditar, respirar", Component: Lotus, bursts: false, add: "twinkle", remove: "ebb" },
+  mountain: { name: "Montanha", hint: "estudo, projetos", Component: Mountain, bursts: false, add: "grow", remove: "ebb" },
 };
 
 export const VISUAL_ORDER: NumericVisualKey[] = [
@@ -54,11 +61,16 @@ export const VISUAL_ORDER: NumericVisualKey[] = [
   "weights",
   "hourglass",
   "heart",
+  "track",
+  "lotus",
+  "mountain",
 ];
 
 /** Passos rápidos de "+" adequados ao tamanho da meta (copos: 1; páginas: 1/5/10; minutos: 5/10/15). */
 export function stepsOf(h: Habit): number[] {
   if (h.kind === "counter") return [1];
+  const byUnit = unitSteps(h.unit);
+  if (byUnit) return byUnit;
   const t = h.target;
   if (t <= 10) return [1, 2];
   if (t <= 30) return [1, 5, 10];

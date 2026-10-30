@@ -2,9 +2,13 @@ import type { Habit } from "./types";
 
 export type HabitTemplate = Omit<Habit, "id" | "createdAt" | "order">;
 
-export const TEMPLATES: { key: string; blurb: string; habit: HabitTemplate }[] = [
+export type TemplateGroup = "Corpo" | "Mente" | "Rotina" | "Dinheiro";
+export const TEMPLATE_GROUPS: TemplateGroup[] = ["Corpo", "Mente", "Rotina", "Dinheiro"];
+
+export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habit: HabitTemplate }[] = [
   {
     key: "agua",
+    group: "Corpo",
     blurb: "O copo que enche a cada gole",
     habit: {
       name: "Água",
@@ -20,6 +24,7 @@ export const TEMPLATES: { key: string; blurb: string; habit: HabitTemplate }[] =
   },
   {
     key: "leitura",
+    group: "Mente",
     blurb: "Páginas que se acumulam",
     habit: {
       name: "Leitura",
@@ -35,6 +40,7 @@ export const TEMPLATES: { key: string; blurb: string; habit: HabitTemplate }[] =
   },
   {
     key: "meditar",
+    group: "Mente",
     blurb: "Um selo para cada nível",
     habit: {
       name: "Respirar",
@@ -51,6 +57,7 @@ export const TEMPLATES: { key: string; blurb: string; habit: HabitTemplate }[] =
   },
   {
     key: "movimento",
+    group: "Corpo",
     blurb: "Do alongamento ao treino completo",
     habit: {
       name: "Movimento",
@@ -67,6 +74,7 @@ export const TEMPLATES: { key: string; blurb: string; habit: HabitTemplate }[] =
   },
   {
     key: "cama",
+    group: "Rotina",
     blurb: "Simples: feito ou não",
     habit: {
       name: "Arrumar a cama",
@@ -81,6 +89,7 @@ export const TEMPLATES: { key: string; blurb: string; habit: HabitTemplate }[] =
   },
   {
     key: "estudo",
+    group: "Mente",
     blurb: "Minutos de foco acumulados",
     habit: {
       name: "Estudo",
@@ -91,6 +100,170 @@ export const TEMPLATES: { key: string; blurb: string; habit: HabitTemplate }[] =
       minimum: 10,
       target: 45,
       identity: "Sou alguém que aprende sempre.",
+      essential: false,
+    },
+  },
+  {
+    key: "sono",
+    group: "Corpo",
+    blurb: "Uma lua que enche e estrelas a cada hora",
+    habit: {
+      name: "Sono",
+      kind: "progress",
+      accent: "lilac",
+      visual: "moon",
+      unit: "h",
+      minimum: 6,
+      target: 8,
+      identity: "Sou alguém que respeita o próprio descanso.",
+      essential: false,
+    },
+  },
+  {
+    key: "caminhada",
+    group: "Corpo",
+    blurb: "Pegadas numa trilha até a bandeira",
+    habit: {
+      name: "Caminhada",
+      kind: "progress",
+      accent: "sage",
+      visual: "steps",
+      unit: "km",
+      minimum: 1,
+      target: 5,
+      identity: "Sou alguém que anda todo dia.",
+      essential: false,
+    },
+  },
+  {
+    key: "treino",
+    group: "Corpo",
+    blurb: "Uma anilha a cada série",
+    habit: {
+      name: "Treino",
+      kind: "counter",
+      accent: "clay",
+      visual: "weights",
+      unit: "séries",
+      minimum: 2,
+      target: 5,
+      identity: "Sou alguém que fica mais forte.",
+      essential: false,
+    },
+  },
+  {
+    key: "foco",
+    group: "Mente",
+    blurb: "A areia passa conforme o tempo de foco",
+    habit: {
+      name: "Foco profundo",
+      kind: "progress",
+      accent: "sand",
+      visual: "hourglass",
+      unit: "min",
+      minimum: 15,
+      target: 60,
+      identity: "Sou alguém que protege a própria atenção.",
+      essential: false,
+    },
+  },
+  {
+    key: "idioma",
+    group: "Mente",
+    blurb: "Um broto que vira flor com a prática",
+    habit: {
+      name: "Praticar idioma",
+      kind: "progress",
+      accent: "sage",
+      visual: "plant",
+      unit: "min",
+      minimum: 5,
+      target: 30,
+      identity: "Sou alguém que aprende sempre.",
+      essential: false,
+    },
+  },
+  {
+    key: "escrever",
+    group: "Mente",
+    blurb: "Uma chama que cresce com a escrita",
+    habit: {
+      name: "Escrever",
+      kind: "progress",
+      accent: "clay",
+      visual: "flame",
+      unit: "min",
+      minimum: 5,
+      target: 30,
+      identity: "Sou alguém que pensa no papel.",
+      essential: false,
+    },
+  },
+  {
+    key: "gratidao",
+    group: "Mente",
+    blurb: "Um coração que se enche de gratidão",
+    habit: {
+      name: "Gratidão",
+      kind: "counter",
+      accent: "clay",
+      visual: "heart",
+      unit: "gratidões",
+      minimum: 1,
+      target: 3,
+      identity: "Sou alguém que enxerga o que tem de bom.",
+      essential: false,
+    },
+  },
+  {
+    key: "acordar",
+    group: "Rotina",
+    blurb: "O sol nasce quando você levanta",
+    habit: {
+      name: "Acordar cedo",
+      kind: "check",
+      accent: "sun",
+      visual: "sunrise",
+      unit: "",
+      minimum: 1,
+      target: 2,
+      minLabel: "Sem soneca",
+      idealLabel: "Antes das 7h",
+      identity: "Sou alguém que aproveita a manhã.",
+      essential: false,
+    },
+  },
+  {
+    key: "noite",
+    group: "Rotina",
+    blurb: "A lâmpada apaga no fim do dia",
+    habit: {
+      name: "Ritual da noite",
+      kind: "check",
+      accent: "lilac",
+      visual: "lamp",
+      unit: "",
+      minimum: 1,
+      target: 2,
+      minLabel: "Telas fora da cama",
+      idealLabel: "Luz apagada às 23h",
+      identity: "Sou alguém que fecha bem o dia.",
+      essential: false,
+    },
+  },
+  {
+    key: "poupar",
+    group: "Dinheiro",
+    blurb: "Moedas caindo no pote",
+    habit: {
+      name: "Guardar dinheiro",
+      kind: "progress",
+      accent: "sun",
+      visual: "jar",
+      unit: "R$",
+      minimum: 5,
+      target: 20,
+      identity: "Sou alguém que cuida do próprio futuro.",
       essential: false,
     },
   },

@@ -5,8 +5,9 @@ import { motion } from "motion/react";
 import { Sheet } from "./Sheet";
 import { accentColor, accentSoft } from "./habits/shared";
 import { VISUALS, VISUAL_ORDER, previewHabit } from "./habits/visuals";
-import { TEMPLATES, type HabitTemplate } from "@/lib/templates";
-import type { AccentKey, HabitKind, VisualKey } from "@/lib/types";
+import { CHECK_VISUALS, CHECK_VISUAL_ORDER } from "./habits/checkVisuals";
+import { TEMPLATES, TEMPLATE_GROUPS, type HabitTemplate } from "@/lib/templates";
+import type { AccentKey, CheckVisualKey, HabitKind, NumericVisualKey, VisualKey } from "@/lib/types";
 
 const ACCENTS: AccentKey[] = ["sage", "water", "sand", "clay", "lilac", "sun"];
 const KINDS: { kind: HabitKind; name: string; hint: string }[] = [
@@ -37,7 +38,10 @@ export function AddHabitSheet({ open, onClose, onAdd }: Props) {
     <Sheet open={open} onClose={close} title={custom ? "Novo hábito" : "Adicionar hábito"}>
       {!custom ? (
         <div className="flex flex-col gap-2.5">
-          {TEMPLATES.map((t) => (
+          {TEMPLATE_GROUPS.map((g) => (
+            <div key={g} className="flex flex-col gap-2.5">
+              <h3 className="pt-2 text-sm text-muted">{g}</h3>
+              {TEMPLATES.filter((t) => t.group === g).map((t) => (
             <motion.button
               key={t.key}
               type="button"
@@ -59,6 +63,8 @@ export function AddHabitSheet({ open, onClose, onAdd }: Props) {
                 <span className="block truncate text-sm text-muted">{t.blurb}</span>
               </span>
             </motion.button>
+              ))}
+            </div>
           ))}
           <button
             type="button"
@@ -80,6 +86,16 @@ export function AddHabitSheet({ open, onClose, onAdd }: Props) {
   );
 }
 
+function NumericPreview({ visual, habit }: { visual: NumericVisualKey; habit: ReturnType<typeof previewHabit> }) {
+  const { Component } = VISUALS[visual];
+  return <Component habit={habit} value={6} frac={0.6} bursts={[]} onBurstDone={() => {}} />;
+}
+
+function CheckPreview({ visual, habit }: { visual: CheckVisualKey; habit: ReturnType<typeof previewHabit> }) {
+  const { Component } = CHECK_VISUALS[visual];
+  return <Component habit={habit} value={2} stages={2} pulse={0} dir={1} />;
+}
+
 /** Miniatura viva de um visual (o mesmo componente do cartão, em escala reduzida). */
 function VisualTile({
   visual,
@@ -92,8 +108,9 @@ function VisualTile({
   selected: boolean;
   onPick: () => void;
 }) {
-  const { name, Component } = VISUALS[visual];
-  const habit = previewHabit(accent);
+  const isCheck = visual in CHECK_VISUALS;
+  const name = isCheck ? CHECK_VISUALS[visual as CheckVisualKey].name : VISUALS[visual as NumericVisualKey].name;
+  const habit = previewHabit(accent, isCheck ? "check" : "progress");
   return (
     <button
       type="button"
@@ -111,7 +128,11 @@ function VisualTile({
           className="flex items-center justify-center"
           style={{ width: 112, height: 124, transform: "scale(0.5)", transformOrigin: "top left" }}
         >
-          <Component habit={habit} value={6} frac={0.6} bursts={[]} onBurstDone={() => {}} />
+          {isCheck ? (
+            <CheckPreview visual={visual as CheckVisualKey} habit={habit} />
+          ) : (
+            <NumericPreview visual={visual as NumericVisualKey} habit={habit} />
+          )}
         </span>
       </span>
       <span className="text-[12px]" style={{ color: selected ? "var(--ink)" : "var(--muted)" }}>
@@ -135,7 +156,10 @@ function CustomForm({ onSubmit }: { onSubmit: (h: HabitTemplate) => void }) {
   const [essential, setEssential] = useState(false);
   const [identity, setIdentity] = useState("");
 
-  const visual: VisualKey = visualPick ?? (kind === "counter" ? "glass" : "ring");
+  const checkPick = visualPick && visualPick in CHECK_VISUALS ? visualPick : null;
+  const numericPick = visualPick && visualPick in VISUALS ? visualPick : null;
+  const visual: VisualKey =
+    kind === "check" ? (checkPick ?? "stamp") : (numericPick ?? (kind === "counter" ? "glass" : "ring"));
   const valid =
     name.trim().length > 0 && (kind === "check" || (target >= 1 && minimum >= 1 && minimum <= target));
 
@@ -154,6 +178,7 @@ function CustomForm({ onSubmit }: { onSubmit: (h: HabitTemplate) => void }) {
         unit: "",
         minimum: 1,
         target: twoLevels ? 2 : 1,
+        visual,
         minLabel: twoLevels ? minLabel.trim() || "Versão mínima" : undefined,
         idealLabel: twoLevels ? idealLabel.trim() || "Versão ideal" : undefined,
       });
@@ -202,6 +227,14 @@ function CustomForm({ onSubmit }: { onSubmit: (h: HabitTemplate) => void }) {
             <input type="checkbox" checked={twoLevels} onChange={(e) => setTwoLevels(e.target.checked)} className="h-4 w-4 accent-[var(--sage)]" />
             Dois níveis (mínimo e ideal)
           </label>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-muted">Como ele aparece</span>
+            <div className="grid grid-cols-4 gap-2">
+              {CHECK_VISUAL_ORDER.map((v) => (
+                <VisualTile key={v} visual={v} accent={accent} selected={visual === v} onPick={() => setVisualPick(v)} />
+              ))}
+            </div>
+          </div>
           {twoLevels && (
             <div className="grid grid-cols-2 gap-2">
               <input className={field} value={minLabel} onChange={(e) => setMinLabel(e.target.value)} placeholder="Mínimo: 1 min" maxLength={28} />

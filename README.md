@@ -11,7 +11,9 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
   - **Marcar** (respirar, movimento…): selo que "carimba", com nível **mínimo** e **ideal**
 - **Mini-hábitos com níveis**: fazer o mínimo já conta
 - **Modo dia difícil** (ícone de folha): reduz o dia ao essencial
-- **Frases contextuais** por momento do dia, em quatro tons (gentil, estoico, direto, leve) e frase de identidade por hábito
+- **Frases contextuais** em quatro tons (gentil, estoico, direto, leve): além do horário, reagem ao contexto (voltando após dias sem fazer, segunda, domingo, início do mês, já começou o dia) e às conquistas (mínimo, ideal, recomeço). Linguagem de apoio à autonomia e elogio ao processo, sem culpa; as frases de evento não repetem as últimas mostradas. Frase de identidade por hábito
+- **12 visuais numéricos e 3 de check** (copo, livro, anel, contas, lua, planta, passos, pote, chama, halteres, ampulheta, coração; selo, nascer do sol, lâmpada), cada um com som próprio e **animação de retorno**: ao remover, o visual desfaz o gesto (páginas voltam, copo esvazia, moeda sai, planta murcha). O botão "−" desfaz o último passo adicionado
+- **16 modelos de hábito** em quatro grupos (corpo, mente, rotina, dinheiro)
 - **Sons de feedback** sintetizados no próprio navegador (sem arquivos, sem licença)
 - **Som ambiente** (ícone de ondas no topo): mixer com chuva, vento, ondas e um piano generativo (notas de uma escala pentatônica com reverb), quatro predefinições, volume por camada e timer para desligar sozinho com fade. Tudo gerado no aparelho, offline; os volumes ficam salvos e o som nunca começa sozinho
 - **Celebração** zen quando o dia é completado
@@ -65,7 +67,7 @@ src/
   app/            layout, manifest (PWA), página
   components/     telas, sheets, celebração, semana, check-in, retrospectiva, jardim, pausas
     habits/       StampCheck · NumericHabit · HabitCard
-      visuals/    Glass · Book · Ring · Beads
+      visuals/    12 visuais numéricos (registro em index.tsx)
   lib/
     types.ts      modelo de dados e níveis (mínimo/ideal)
     stats.ts      sequências, mapa de calor, recuperação e padrões

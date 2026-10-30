@@ -6,7 +6,15 @@ export type PhraseMoment =
   | "evening"
   | "done" // um hábito concluído
   | "allDone" // dia completo
-  | "hardDay"; // modo dia difícil
+  | "hardDay" // modo dia difícil
+  | "returning" // voltando depois de dias sem fazer nada
+  | "partial" // já fez alguma coisa hoje
+  | "monday"
+  | "sunday"
+  | "monthStart"
+  | "minimum" // chegou ao mínimo (mini hábito cumprido)
+  | "ideal" // chegou ao ideal
+  | "comeback"; // primeiro hábito feito após um dia em branco
 
 export const TONE_LABEL: Record<Tone, { name: string; hint: string }> = {
   gentle: { name: "Gentil", hint: "Acolhedor, sem cobrança" },
@@ -15,8 +23,10 @@ export const TONE_LABEL: Record<Tone, { name: string; hint: string }> = {
   humor: { name: "Leve", hint: "Com um sorriso" },
 };
 
+type BaseMoment = "morning" | "afternoon" | "evening" | "done" | "allDone" | "hardDay";
+
 // Frases originais, escritas para o app (nenhuma é citação de terceiros).
-const PHRASES: Record<Tone, Record<PhraseMoment, string[]>> = {
+const PHRASES: Record<Tone, Record<BaseMoment, string[]>> = {
   gentle: {
     morning: [
       "Um dia novo, sem pressa. Comece pelo menor passo.",
@@ -123,6 +133,156 @@ const PHRASES: Record<Tone, Record<PhraseMoment, string[]>> = {
   },
 };
 
+
+// Contextos além do horário. Linguagem de apoio à autonomia ("se quiser", "dá pra"),
+// elogio ao processo (não ao resultado) e autocompaixão: nada de culpa por faltas.
+const EXTRA: Record<Tone, Partial<Record<PhraseMoment, string[]>>> = {
+  gentle: {
+    returning: [
+      "Que bom te ver de volta. Recomeçar também é parte do caminho.",
+      "Os dias passaram, e tudo bem. Vamos com o menor passo possível.",
+      "Sem cobrança por ontem. Hoje só precisa de um começo pequeno.",
+    ],
+    partial: [
+      "Você já começou, e começar é a parte mais difícil.",
+      "Já tem coisa boa feita hoje. Siga se fizer sentido.",
+      "Um passo dado. O resto pode vir no seu tempo.",
+    ],
+    monday: [
+      "Semana nova, página em branco. Sem pressa de preencher.",
+      "Segunda-feira: dá pra começar leve e ir ajustando.",
+      "Uma semana inteira pela frente, um dia de cada vez.",
+    ],
+    sunday: [
+      "Domingo é bom para olhar o que deu certo na semana.",
+      "Dia de descanso e de se reconhecer pelo que fez.",
+      "Fechando a semana com gentileza. Você apareceu mais do que pensa.",
+    ],
+    monthStart: [
+      "Mês novo. Uma chance gentil de ajustar o que quiser.",
+      "Começo de mês: nada a provar, só um novo ritmo a testar.",
+      "Novo mês, mesmas pequenas escolhas, agora com mais prática.",
+    ],
+    minimum: [
+      "O mínimo conta, e muito. Foi você aparecendo.",
+      "Mínimo feito: o hábito está de pé. Se quiser mais, ótimo; se não, está ótimo.",
+      "Aparecer já é o que constrói o hábito. Obrigado a você mesmo.",
+    ],
+    ideal: [
+      "Foi além do mínimo, no seu tempo. Que bonito.",
+      "Ideal alcançado. Repare como foi bom chegar aqui.",
+      "Você se deu o melhor de hoje. Aproveite o gostinho.",
+    ],
+    comeback: [
+      "Voltou! É assim que se constrói consistência de verdade.",
+      "Recomeço feito com calma. É isso que importa.",
+      "Depois de uma pausa, esse primeiro passo vale ouro.",
+    ],
+  },
+  stoic: {
+    returning: [
+      "O que passou, passou. Hoje, um ato simples.",
+      "Retomar é uma habilidade. Pratique-a agora.",
+      "Não carregue os dias perdidos. Faça o próximo gesto.",
+    ],
+    partial: [
+      "Já começou. Continue só enquanto fizer sentido.",
+      "O esforço de hoje já está registrado. Siga com calma.",
+      "O que está ao seu alcance, você já começou a fazer.",
+    ],
+    monday: [
+      "Nova semana. Foque no que depende de você.",
+      "Segunda-feira é só um dia, com as mesmas pequenas escolhas.",
+      "Comece sem expectativa, termine com um passo feito.",
+    ],
+    sunday: [
+      "Olhe a semana sem julgar. Aprenda e siga.",
+      "Domingo: revise com serenidade o que o esforço construiu.",
+      "Descanse. O hábito está sendo moldado mesmo quando você pausa.",
+    ],
+    monthStart: [
+      "Novo mês. Ajuste o rumo sem drama.",
+      "Mês novo é só uma data útil para recomeçar com clareza.",
+      "Escolha o que importa neste mês e deixe o resto de lado.",
+    ],
+    minimum: [
+      "Mínimo cumprido. A constância nasce de gestos assim.",
+      "Pouco, mas feito. Isso pesa mais que o muito prometido.",
+      "O mínimo é o chão firme. Daqui, só você decide mais.",
+    ],
+    ideal: [
+      "Ideal feito. O esforço foi seu, ninguém fez por você.",
+      "Você foi além. Guarde a lição, não a vaidade.",
+      "Disciplina em ato. Siga com a mesma serenidade.",
+    ],
+    comeback: [
+      "Retomou. É o que separa quem constrói de quem desiste.",
+      "O primeiro passo depois da pausa é o mais valioso.",
+      "Voltar sem alarde. Assim se forma o caráter do hábito.",
+    ],
+  },
+  direct: {
+    returning: [
+      "Voltou. Faça o mínimo agora, sem ritual.",
+      "Passou. Hoje: um hábito, o menor.",
+      "Recomece pelo mais fácil.",
+    ],
+    partial: [
+      "Já começou. Mais um?",
+      "Em andamento. Bom ritmo.",
+      "Primeiro passo dado.",
+    ],
+    monday: ["Segunda. Um hábito de cada vez.", "Semana nova. Comece pequeno.", "Segunda: o mínimo já vale."],
+    sunday: ["Domingo. Olhe a semana e siga.", "Fechamento: o que funcionou?", "Descanse e ajuste."],
+    monthStart: ["Mês novo. Ajuste o que não funciona.", "Dia 1. Simples assim.", "Novo mês, mesma meta: aparecer."],
+    minimum: ["Mínimo feito. Hábito mantido.", "Feito. Pode parar ou seguir.", "Mínimo: check."],
+    ideal: ["Ideal feito. Forte.", "Foi além. Anote o que ajudou.", "Ideal: check."],
+    comeback: ["De volta. É isso.", "Retomou. Siga.", "Voltou ao jogo."],
+  },
+  humor: {
+    returning: [
+      "Sumiu, hein? Brincadeira, bem-vindo de volta!",
+      "Os hábitos sentiram saudade. Dê um oizinho pra eles.",
+      "Recomeço oficial. Ninguém viu nada do passado.",
+    ],
+    partial: [
+      "Já aqueceu os motores. Bora?",
+      "Começou bem. Os hábitos estão de olho, orgulhosos.",
+      "Um já foi. Os outros estão ansiosos.",
+    ],
+    monday: [
+      "Segunda-feira: sim, ela existe. Vamos de mínimo.",
+      "Semana nova, desculpas novas... ou hábitos novos!",
+      "Segunda, mas com cara de oportunidade.",
+    ],
+    sunday: [
+      "Domingo: modo balanço, sem boleto.",
+      "Fim de semana. Os hábitos aceitam café e carinho.",
+      "Hora de olhar a semana e se dar um joinha.",
+    ],
+    monthStart: [
+      "Mês novo, saldo zerado de culpa.",
+      "Dia 1: a melhor desculpa pra recomeçar.",
+      "Mês novo. Sem pressão, com biscoito.",
+    ],
+    minimum: [
+      "Mínimo no bolso. Dá até pra comemorar.",
+      "Feito o mínimo. O sofá que espere.",
+      "Pouquinho que vale muito. Ponto pra você.",
+    ],
+    ideal: [
+      "Ideal! Quem é você e o que fez com a preguiça?",
+      "Foi além. Pode se achar, só um tiquinho.",
+      "Ideal feito. Os hábitos pediram para dizer 'uau'.",
+    ],
+    comeback: [
+      "Voltou! Aplausos discretos, mas sinceros.",
+      "Primeiro hábito pós-pausa: lendário.",
+      "O retorno do herói. Trilha sonora imaginária ligada.",
+    ],
+  },
+};
+
 function hash(str: string): number {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) {
@@ -132,14 +292,43 @@ function hash(str: string): number {
   return Math.abs(h);
 }
 
+function listOf(tone: Tone, moment: PhraseMoment): string[] {
+  const base = (PHRASES[tone] as Partial<Record<PhraseMoment, string[]>>)[moment];
+  const list = base ?? EXTRA[tone][moment];
+  return list && list.length ? list : PHRASES[tone].morning;
+}
+
 /** Frase estável para a mesma data/momento (não muda a cada render). */
 export function phraseFor(tone: Tone, moment: PhraseMoment, seed: string): string {
-  const list = PHRASES[tone][moment];
+  const list = listOf(tone, moment);
   return list[hash(`${tone}:${moment}:${seed}`) % list.length];
 }
 
-/** Frase aleatória para eventos (ao concluir algo). */
+const MEMORY_KEY = "enso:phrases";
+const MEMORY_SIZE = 3;
+
+function readMemory(): Record<string, string[]> {
+  try {
+    return JSON.parse(localStorage.getItem(MEMORY_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+/** Frase aleatória para eventos; evita repetir as últimas mostradas. */
 export function randomPhrase(tone: Tone, moment: PhraseMoment): string {
-  const list = PHRASES[tone][moment];
-  return list[Math.floor(Math.random() * list.length)];
+  const list = listOf(tone, moment);
+  const key = `${tone}:${moment}`;
+  const mem = readMemory();
+  const recent = mem[key] ?? [];
+  const fresh = list.filter((p) => !recent.includes(p));
+  const pool = fresh.length ? fresh : list;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  try {
+    mem[key] = [pick, ...recent].slice(0, Math.min(MEMORY_SIZE, list.length - 1));
+    localStorage.setItem(MEMORY_KEY, JSON.stringify(mem));
+  } catch {
+    /* sem memória: tudo bem */
+  }
+  return pick;
 }

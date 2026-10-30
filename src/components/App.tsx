@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "motion/react";
 import { HabitsProvider, useHabits } from "@/lib/store";
 import { dateKey, greetingOf, lastDays, longDate, momentOf, parseKey, relativeLabel } from "@/lib/dates";
-import { phraseFor, randomPhrase } from "@/lib/phrases";
+import { phraseFor, randomPhrase, type PhraseMoment } from "@/lib/phrases";
 import { levelOf, type Habit } from "@/lib/types";
 import { useFeedback } from "@/lib/useFeedback";
 import { HabitCard } from "./habits/HabitCard";
@@ -112,11 +112,31 @@ function Main() {
   const pauseNow = activePause(settings.pauses, today);
   const offerOpen =
     isToday && !pauseNow && lowDay && !hardDay && essentials.length > 0 && settings.offerDismissedDate !== today;
+  // "voltando": nada feito ontem nem anteontem, mas já houve atividade no último mês
+  const returning = useMemo(() => {
+    if (!isToday || habits.length === 0) return false;
+    const back = lastDays(today, 31).slice(0, -1); // do mais antigo ao dia anterior
+    const recent = back.slice(-2);
+    const older = back.slice(0, -2);
+    return recent.every((d) => ratio(d) === 0) && older.some((d) => ratio(d) > 0);
+  }, [isToday, habits.length, today, ratio]);
+  const yesterdayBlank = useMemo(
+    () => isToday && habits.length > 0 && ratio(lastDays(today, 2)[0]) === 0,
+    [isToday, habits.length, today, ratio]
+  );
+  const dayContext: PhraseMoment = (() => {
+    if (doneCount > 0) return "partial";
+    if (returning) return "returning";
+    if (parseKey(today).getDate() === 1) return "monthStart";
+    if (dowToday === 1) return "monday";
+    if (dowToday === 0) return "sunday";
+    return moment;
+  })();
   const phrase = useMemo(() => {
     if (!isToday) return "";
     if (hardDay || lowDay || pauseNow) return phraseFor(settings.tone, "hardDay", today);
-    return phraseFor(settings.tone, moment, today);
-  }, [isToday, hardDay, lowDay, pauseNow, settings.tone, moment, today]);
+    return phraseFor(settings.tone, dayContext, today);
+  }, [isToday, hardDay, lowDay, pauseNow, settings.tone, dayContext, today]);
 
   const showToast = (text: string) => {
     const id = ++toastSeq.current;
@@ -145,7 +165,9 @@ function Main() {
         setTimeout(() => setCelebrate(null), 4200)
       );
     } else if (before === 0 || after === 2) {
-      timers.current.push(setTimeout(() => showToast(randomPhrase(settings.tone, "done")), 350));
+      const kind: PhraseMoment =
+        after === 2 ? "ideal" : yesterdayBlank && doneCount === 0 ? "comeback" : "minimum";
+      timers.current.push(setTimeout(() => showToast(randomPhrase(settings.tone, kind)), 350));
     }
   };
 

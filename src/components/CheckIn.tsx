@@ -67,7 +67,17 @@ const reveal = {
  * Check-in do dia: um toque para o humor, um para a energia. Depois de respondido,
  * recolhe num resumo de uma linha (tocar nele reabre para editar).
  */
-export function CheckIn({ date, isToday, onOpenDiary }: { date: string; isToday: boolean; onOpenDiary?: () => void }) {
+export function CheckIn({
+  date,
+  isToday,
+  onOpenDiary,
+  onOpenMood,
+}: {
+  date: string;
+  isToday: boolean;
+  onOpenDiary?: () => void;
+  onOpenMood?: () => void;
+}) {
   const { getCheckin, setCheckin } = useHabits();
   const fb = useFeedback();
   const c = getCheckin(date);
@@ -104,11 +114,27 @@ export function CheckIn({ date, isToday, onOpenDiary }: { date: string; isToday:
   };
 
   return (
-    <motion.section layout className="card overflow-hidden" style={{ borderRadius: 24 }}>
+    <motion.section layout className="card relative overflow-hidden" style={{ borderRadius: 24 }}>
+      {onOpenMood && (
+        <button
+          type="button"
+          aria-label="Calendário de humor"
+          onClick={onOpenMood}
+          className="absolute right-2.5 top-2.5 z-10 grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface-2"
+        >
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="3.5" y="5" width="17" height="15" rx="3" />
+            <path d="M8 3v4M16 3v4M3.5 10h17" />
+            <circle cx="9" cy="14.5" r="1" fill="currentColor" stroke="none" />
+            <circle cx="12.5" cy="14.5" r="1" fill="currentColor" stroke="none" />
+            <circle cx="16" cy="14.5" r="1" fill="currentColor" stroke="none" />
+          </svg>
+        </button>
+      )}
       <AnimatePresence mode="wait" initial={false}>
         {open || mood === undefined || energy === undefined ? (
           <motion.div key="open" {...reveal} className="px-4 pb-4 pt-3.5">
-            <h3 className="text-sm text-muted">
+            <h3 className="pr-10 text-sm text-muted">
               {isToday ? "Como você está hoje?" : "Como foi esse dia?"}
             </h3>
             <div className="mt-3 flex justify-between" role="group" aria-label="Humor">
@@ -178,7 +204,7 @@ export function CheckIn({ date, isToday, onOpenDiary }: { date: string; isToday:
             {...reveal}
             aria-label="Editar check-in"
             onClick={() => setOpen(true)}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left"
+            className="flex w-full items-center gap-3 py-3 pl-4 pr-14 text-left"
           >
             <span style={{ color: accentColor("sage") }}>
               <Face mood={mood} size={28} />

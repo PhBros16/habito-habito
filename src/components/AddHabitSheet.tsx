@@ -36,16 +36,19 @@ interface Props {
   /** quando definido, o formulário edita este hábito em vez de criar um novo */
   editing?: Habit | null;
   onSave?: (id: string, patch: Partial<Habit>) => void;
+  /** chave de um modelo para abrir direto no formulário ajustável (vem dos guias) */
+  startWith?: string | null;
 }
 
-export function AddHabitSheet({ open, onClose, onAdd, editing, onSave }: Props) {
+export function AddHabitSheet({ open, onClose, onAdd, editing, onSave, startWith }: Props) {
   // null = lista de modelos; objeto = formulário (preenchido pelo modelo ou em branco)
   const [draft, setDraft] = useState<HabitTemplate | "blank" | null>(null);
   const close = () => {
     onClose();
     setTimeout(() => setDraft(null), 300);
   };
-  const form = editing ?? draft;
+  const startTpl = startWith ? (TEMPLATES.find((t) => t.key === startWith)?.habit ?? null) : null;
+  const form = editing ?? draft ?? startTpl;
 
   return (
     <Sheet open={open} onClose={close} title={editing ? "Editar hábito" : form ? "Ajustar hábito" : "Adicionar hábito"}>

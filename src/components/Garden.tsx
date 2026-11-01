@@ -274,13 +274,89 @@ export function GardenScene({
       />
 
       {/* laguinho (nível Jardim) */}
-      {level >= 2 && (
+      {level >= 3 && (
         <g>
           <ellipse cx={W - 70} cy={G + 8} rx={compact ? 26 : 34} ry={compact ? 4 : 6} fill="color-mix(in srgb, var(--water) 40%, var(--bg))" opacity="0.85" />
           <motion.ellipse cx={W - 70} cy={G + 8} fill="none" stroke="var(--water)" strokeWidth="0.8" animate={{ rx: [8, 28], ry: [1.5, 5], opacity: [0.6, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeOut" }} />
         </g>
       )}
-      {level >= 3 && !night && Array.from({ length: 2 }, (_, i) => <Bird key={i} i={i} w={W} h={G} />)}
+      {level >= 4 && !night && Array.from({ length: 2 }, (_, i) => <Bird key={i} i={i} w={W} h={G} />)}
+
+      {/* florzinhas silvestres (Clareira) */}
+      {level >= 1 &&
+        Array.from({ length: compact ? 7 : 11 }, (_, i) => {
+          const fx = ((i * 53 + 17) % (W - 20)) + 10;
+          const fy = G + 6 + ((i * 7) % 11);
+          const col = ["var(--clay)", "var(--sun)", "var(--lilac)", "var(--water)"][i % 4];
+          return (
+            <g key={`wf${i}`} transform={`translate(${fx} ${fy})`}>
+              <line x1="0" y1="0" x2="0" y2="-4" stroke="var(--sage)" strokeWidth="0.9" opacity="0.7" />
+              <motion.circle
+                cy="-5"
+                r={compact ? 1.5 : 2}
+                fill={col}
+                opacity="0.9"
+                animate={{ scale: [1, 1.25, 1] }}
+                transition={{ duration: 3 + (i % 3), repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
+              />
+            </g>
+          );
+        })}
+
+      {/* pedras do caminho (Caminho) */}
+      {level >= 5 &&
+        Array.from({ length: 6 }, (_, i) => (
+          <ellipse
+            key={`st${i}`}
+            cx={30 + i * 54 + (i % 2) * 6}
+            cy={G + 9 + (i % 2) * 3}
+            rx={compact ? 6 : 9}
+            ry={compact ? 1.6 : 2.4}
+            fill="color-mix(in srgb, var(--ink) 16%, var(--bg))"
+            opacity="0.7"
+          />
+        ))}
+
+      {/* aurora (noite) ou arco-íris (dia) (Aurora) */}
+      {level >= 7 && night && (
+        <motion.path
+          d={`M0 ${H * 0.34} C 90 ${H * 0.12} 190 ${H * 0.5} ${W} ${H * 0.22}`}
+          fill="none"
+          stroke="var(--sage)"
+          strokeWidth={compact ? 10 : 16}
+          strokeLinecap="round"
+          opacity="0.22"
+          animate={{ opacity: [0.12, 0.3, 0.12], strokeWidth: compact ? [8, 12, 8] : [13, 19, 13] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
+      {level >= 7 && !night &&
+        ["var(--clay)", "var(--sun)", "var(--sage)", "var(--water)"].map((c, i) => (
+          <path
+            key={`rb${i}`}
+            d={`M${W * 0.5} ${G - 6 - i * 4} a ${W * 0.28 - i * 4} ${W * 0.2 - i * 4} 0 0 1 ${W * 0.46} 0`}
+            fill="none"
+            stroke={c}
+            strokeWidth="2.2"
+            opacity="0.22"
+          />
+        ))}
+
+      {/* estrelas cadentes (Eterno) */}
+      {level >= 8 && night && (
+        <motion.line
+          x1={W * 0.2}
+          y1={H * 0.14}
+          x2={W * 0.2 + 22}
+          y2={H * 0.14 + 8}
+          stroke="var(--ink)"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          initial={{ opacity: 0, x: 0, y: 0 }}
+          animate={{ opacity: [0, 0.9, 0], x: [0, 120], y: [0, 44] }}
+          transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 7, ease: "easeOut" }}
+        />
+      )}
 
       {plants.map((p, i) => {
         const x = slot * (i + 0.5) - pw / 2;
@@ -312,13 +388,38 @@ export function GardenScene({
                 <PlantArt p={p} />
               </motion.g>
             </motion.g>
+            {/* regada hoje: gotas de orvalho e um brilho suave */}
+            {p.doneToday && (
+              <g aria-hidden>
+                <motion.circle
+                  cx="50"
+                  cy="70"
+                  r="46"
+                  fill="var(--sage)"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0.06, 0.14, 0.06] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                />
+                {[0, 1, 2].map((k) => (
+                  <motion.circle
+                    key={k}
+                    cx={34 + k * 16}
+                    r="2.2"
+                    fill="var(--water)"
+                    initial={{ cy: 20, opacity: 0 }}
+                    animate={{ cy: [18, 70], opacity: [0, 0.9, 0] }}
+                    transition={{ duration: 2.6, repeat: Infinity, delay: k * 0.7 + 0.3, ease: "easeIn" }}
+                  />
+                ))}
+              </g>
+            )}
           </svg>
         );
       })}
 
-      {level >= 4 && (sky === "dusk" || night) && [0.22, 0.5, 0.82].map((f, i) => <Lantern key={i} x={W * f} y={G - 34 - (i % 2) * 10} />)}
+      {level >= 6 && (sky === "dusk" || night) && [0.22, 0.5, 0.82].map((f, i) => <Lantern key={i} x={W * f} y={G - 34 - (i % 2) * 10} />)}
 
-      {night && level >= 2 &&
+      {night && level >= 3 &&
         Array.from({ length: compact ? 3 : 5 }, (_, i) => (
           <motion.circle
             key={i}

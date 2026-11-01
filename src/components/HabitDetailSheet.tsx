@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { addDays } from "@/lib/dates";
 import { motion } from "motion/react";
 import { Sheet } from "./Sheet";
 import { accentColor, accentSoft } from "./habits/shared";
@@ -28,6 +29,81 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
       {children}
     </section>
   );
+}
+
+
+const AUTO_LABELS = ["De jeito nenhum", "Pouco", "Mais ou menos", "Bastante", "Totalmente"];
+const AUTO_EVERY_DAYS = 14;
+
+/**
+ * Pulso de automaticidade: uma pergunta a cada 14 dias, baseada no índice SRBAI (Gardner e colegas, 2012).
+ * Dá ao usuário uma medida do que a repetição já mudou, além da contagem de dias.
+ */
+function AutomaticityBlock({ habitId, name, today, days, color }: { habitId: string; name: string; today: string; days: number; color: string }) {
+  const { settings, updateSettings } = useHabits();
+  const answers = settings.automaticity[habitId] ?? [];
+  const last = answers[answers.length - 1];
+  const due = !last || addDays(last.date, AUTO_EVERY_DAYS) <= today;
+  const ready = days >= 7;
+  const graduated = answers.length >= 2 && answers.slice(-2).every((a) => a.score >= 4);
+
+  const answer = (score: number) =>
+    updateSettings({ automaticity: { ...settings.automaticity, [habitId]: [...answers.filter((a) => a.date !== today), { date: today, score }].slice(-24) } });
+
+  return (
+    <Block title="Está ficando automático?">
+      {!ready ? (
+        <p className="text-[13px] leading-snug text-muted">
+          Depois de uns 7 dias de prática, o Enso pergunta o quanto isso já acontece sem esforço. É uma medida mais fiel do que contar dias.
+        </p>
+      ) : due ? (
+        <>
+          <p className="text-[15px] leading-snug">Fazer “{name}” já é algo que acontece sem eu precisar pensar?</p>
+          <div className="grid grid-cols-5 gap-1.5" role="group" aria-label="Nível de automaticidade">
+            {AUTO_LABELS.map((l, i) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => answer(i + 1)}
+                className="flex flex-col items-center gap-1 rounded-2xl border border-line px-1 py-2.5 text-[11px] leading-tight text-muted"
+              >
+                <span className="font-display text-lg text-ink">{i + 1}</span>
+                {l}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="text-[13px] leading-snug text-muted">
+          Próxima pergunta em {Math.max(1, daysUntil(last!.date, today))} {Math.max(1, daysUntil(last!.date, today)) === 1 ? "dia" : "dias"}.
+        </p>
+      )}
+      {answers.length > 0 && (
+        <div className="flex items-end gap-2" role="img" aria-label="Histórico de automaticidade">
+          {answers.map((a) => (
+            <div key={a.date} className="flex flex-col items-center gap-1" title={`${a.date}: ${a.score}/5`}>
+              <span className="block w-3.5 rounded-full" style={{ height: 8 + a.score * 8, background: color, opacity: 0.35 + a.score * 0.13 }} />
+              <span className="text-[10px] tabular-nums text-muted">{a.score}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {graduated && (
+        <p className="rounded-2xl p-3.5 text-[14px] leading-relaxed" style={{ background: "color-mix(in srgb, var(--sage) 12%, transparent)" }}>
+          Duas respostas seguidas altas: esse hábito já se sustenta quase sozinho. Você pode mantê-lo leve, como está, ou subir um pouco o desafio no menu Editar.
+        </p>
+      )}
+      <p className="text-[12px] leading-snug text-muted">
+        Pergunta única inspirada no índice de automaticidade comportamental (Gardner e colegas, 2012). É uma estimativa sua, não um diagnóstico.
+      </p>
+    </Block>
+  );
+}
+
+function daysUntil(last: string, today: string): number {
+  let n = 0;
+  for (let d = today; d < addDays(last, AUTO_EVERY_DAYS) && n < 60; d = addDays(d, 1)) n++;
+  return n;
 }
 
 /** Detalhes de um hábito: sequência, calendário, dias da semana, valores recentes e metas por período. */
@@ -161,6 +237,8 @@ export function HabitDetailSheet({ id, today, onClose }: { id: string | null; to
               </div>
             </Block>
           )}
+
+          <AutomaticityBlock habitId={habit.id} name={habit.name} today={today} days={d.totalDays} color={color} />
 
           <Block title="Leitura honesta">
             <ul className="flex flex-col gap-1.5 text-[13px] leading-snug text-muted">

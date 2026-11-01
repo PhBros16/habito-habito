@@ -11,6 +11,13 @@ import { HabitCard } from "./habits/HabitCard";
 import { WeekStrip } from "./WeekStrip";
 import { Celebration } from "./Celebration";
 import { AddHabitSheet } from "./AddHabitSheet";
+import { MoodSheet } from "./MoodSheet";
+import { BottomNav, type Tab } from "./BottomNav";
+import { LearnPage } from "./LearnPage";
+import { EvolutionPage } from "./EvolutionPage";
+import { missedOnce, raiseSuggestion, dismissed } from "@/lib/adapt";
+import { EvolutionCard, EvolutionSheet, useEvolution } from "./EvolutionSheet";
+import { MILESTONE_DAYS, MILESTONE_TEXT } from "@/lib/evolution";
 import { DiarySheet } from "./DiarySheet";
 import { AboutSheet } from "./AboutSheet";
 import { HabitDetailSheet } from "./HabitDetailSheet";
@@ -87,6 +94,10 @@ function Main() {
   const [gardenOpen, setGardenOpen] = useState(false);
   const [pauseOpen, setPauseOpen] = useState(false);
   const [diaryOpen, setDiaryOpen] = useState(false);
+  const [moodOpen, setMoodOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>("today");
+  const [tryKey, setTryKey] = useState<string | null>(null);
+  const [evolutionOpen, setEvolutionOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const ambientOn = useSyncExternalStore(subscribe, isPlaying, () => false);
@@ -118,6 +129,7 @@ function Main() {
     [habits, essentials, hardDay, today, getValue]
   );
 
+  const evo = useEvolution(today);
   const doneCount = visible.filter((h) => levelOf(h, getValue(h.id, selected)) >= 1).length;
 
   const moment = momentOf();
@@ -170,10 +182,35 @@ function Main() {
     }
   }
 
+  // ciência aplicada: "não falhe duas vezes" (ontem ficou de fora) e meta que ficou fácil demais
+  let again: { habit: Habit; run: number } | null = null;
+  let raise: { habit: Habit; from: number; to: number } | null = null;
+  if (isToday && !pauseNow && !hardDay && !stuck) {
+    for (const h of visible) {
+      if (dismissed(settings.obstacleSeen, `nm2:${h.id}`, today)) continue;
+      const run = missedOnce(h, today, getValue, isPaused);
+      if (run !== null) {
+        again = { habit: h, run };
+        break;
+      }
+    }
+    if (!again) {
+      for (const h of visible) {
+        if (dismissed(settings.obstacleSeen, `up:${h.id}`, today, 14)) continue;
+        const sug = raiseSuggestion(h, today, getValue);
+        if (sug) {
+          raise = { habit: h, ...sug };
+          break;
+        }
+      }
+    }
+  }
+  const hideNudge = (key: string) => updateSettings({ obstacleSeen: { ...settings.obstacleSeen, [key]: today } });
+
   const showToast = (text: string) => {
     const id = ++toastSeq.current;
     setToast({ id, text });
-    timers.current.push(setTimeout(() => setToast((t) => (t?.id === id ? null : t)), 2600));
+    timers.current.push(setTimeout(() => setToast((t) => (t?.id === id ? null : t)), Math.max(2600, text.length * 55)));
   };
 
   const handleChange = (habit: Habit, value: number) => {
@@ -199,12 +236,17 @@ function Main() {
     } else if (before === 0 || after === 2) {
       const kind: PhraseMoment =
         after === 2 ? "ideal" : yesterdayBlank && doneCount === 0 ? "comeback" : "minimum";
-      timers.current.push(setTimeout(() => showToast(randomPhrase(settings.tone, kind)), 350));
+      // primeiro hábito do dia pode fechar um marco de dias de prática
+      const newTotal = evo.activeDays + 1;
+      const milestone = before === 0 && doneCount === 0 && MILESTONE_DAYS.includes(newTotal) ? MILESTONE_TEXT[newTotal] : null;
+      timers.current.push(setTimeout(() => showToast(milestone ?? randomPhrase(settings.tone, kind)), 350));
     }
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-16 pt-[max(1.25rem,env(safe-area-inset-top))]">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-32 pt-[max(1.25rem,env(safe-area-inset-top))]">
+      {tab === "today" && (
+        <>
       {/* topo */}
       <header className="flex items-start justify-between gap-2">
         <div>
@@ -409,7 +451,7 @@ function Main() {
 
       {/* check-in de humor e energia */}
       <div className="mt-5">
-        <CheckIn key={selected} date={selected} isToday={isToday} onOpenDiary={() => setDiaryOpen(true)} />
+        <CheckIn key={selected} date={selected} isToday={isToday} onOpenDiary={() => setDiaryOpen(true)} onOpenMood={() => setMoodOpen(true)} />
       </div>
 
       {/* oferta gentil em dia pesado */}
@@ -496,6 +538,72 @@ function Main() {
         )}
       </AnimatePresence>
 
+      {/* não falhe duas vezes */}
+      <AnimatePresence>
+        {again && (
+          <motion.div
+            key={`again-${again.habit.id}`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-5 rounded-3xl border border-line p-4">
+              <p className="font-display text-lg">Um dia de folga não quebra nada</p>
+              <p className="mt-1 text-sm leading-snug text-muted">
+                {again.habit.name} ficou de fora ontem, depois de {again.run} dias seguidos. Pesquisas mostram que um dia perdido pesa pouco; o que pesa é perder dois. Hoje o mínimo já basta.
+              </p>
+              <button
+                type="button"
+                onClick={() => hideNudge(`nm2:${again.habit.id}`)}
+                className="mt-3 rounded-full border border-line px-4 py-2 text-sm text-muted"
+              >
+                Entendi
+              </button>
+            </div>
+          </motion.div>
+        )}
+        {raise && (
+          <motion.div
+            key={`raise-${raise.habit.id}`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-5 rounded-3xl border p-4" style={{ borderColor: "var(--sage)" }}>
+              <p className="font-display text-lg">{raise.habit.name} está leve</p>
+              <p className="mt-1 text-sm leading-snug text-muted">
+                Você chegou ao ideal em quase todos os últimos 14 dias. Uma meta um pouco maior mantém o desafio sem assustar: de {raise.from} para {raise.to} {raise.habit.unit}. Se preferir, fica como está.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateHabit(raise.habit.id, { target: raise.to });
+                    hideNudge(`up:${raise.habit.id}`);
+                    showToast(`Meta nova: ${raise.to} ${raise.habit.unit}.`);
+                  }}
+                  className="rounded-full px-4 py-2 text-sm font-medium"
+                  style={{ background: "var(--ink)", color: "var(--bg)" }}
+                >
+                  Subir para {raise.to}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => hideNudge(`up:${raise.habit.id}`)}
+                  className="rounded-full border border-line px-4 py-2 text-sm text-muted"
+                >
+                  Manter
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* resumo */}
       <div className="mt-5 flex items-center justify-between px-1 text-sm text-muted">
         <span>
@@ -539,6 +647,7 @@ function Main() {
 
       {/* jardim: cada hábito vira uma planta */}
       <GardenCard today={today} onOpen={() => setGardenOpen(true)} />
+      {habits.length > 0 && <EvolutionCard today={today} onOpen={() => setTab("evolution")} />}
 
       {habits.length === 0 && (
         <motion.div
@@ -565,8 +674,31 @@ function Main() {
         </motion.button>
       </div>
 
+        </>
+      )}
+
+      {tab === "evolution" && (
+        <EvolutionPage
+          today={today}
+          onOpenMood={() => setMoodOpen(true)}
+          onOpenGarden={() => setGardenOpen(true)}
+          onOpenStats={() => setStatsOpen(true)}
+          onOpenReview={() => setReviewOpen(true)}
+        />
+      )}
+
+      {tab === "learn" && (
+        <LearnPage
+          onTry={(key) => {
+            setTryKey(key);
+            setAddOpen(true);
+          }}
+          onOpenAbout={() => setAboutOpen(true)}
+        />
+      )}
+
       {/* aviso suave */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-24 z-20 flex justify-center px-6">
+      <div className="pointer-events-none fixed inset-x-0 bottom-28 z-20 flex justify-center px-6">
         <AnimatePresence>
           {toast && (
             <motion.p
@@ -584,16 +716,27 @@ function Main() {
         </AnimatePresence>
       </div>
 
+      <BottomNav tab={tab} onChange={(t) => { setTab(t); window.scrollTo({ top: 0 }); }} />
       <Celebration show={celebrate !== null} phrase={celebrate ?? ""} />
       <HabitDetailSheet id={detailId} today={today} onClose={() => setDetailId(null)} />
       <DiarySheet open={diaryOpen} onClose={() => setDiaryOpen(false)} />
+      <EvolutionSheet open={evolutionOpen} onClose={() => setEvolutionOpen(false)} today={today} />
+      <MoodSheet open={moodOpen} onClose={() => setMoodOpen(false)} today={today} onOpenDiary={() => { setMoodOpen(false); setDiaryOpen(true); }} />
       <AddHabitSheet
         open={addOpen || !!editing}
         onClose={() => {
           setAddOpen(false);
           setEditing(null);
+          setTimeout(() => setTryKey(null), 300);
         }}
-        onAdd={addHabit}
+        startWith={tryKey}
+        onAdd={(t) => {
+          addHabit(t);
+          if (tryKey) {
+            setTab("today");
+            showToast("Hábito criado. Teste por uma semana e veja o que muda.");
+          }
+        }}
         editing={editing}
         onSave={updateHabit}
       />

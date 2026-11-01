@@ -26,6 +26,10 @@ Hábitos com calma, sem culpa. PWA pessoal, offline-first, feito com Next.js, Ta
 - **Metas por semana ou mês** ("academia 3x por semana"), unidades em lista fechada, âncora "se-então" por hábito e checagem de obstáculos quando um hábito trava há 3+ dias
 - **Detalhes por hábito**: calendário de 12 semanas, sequência, taxa, dia da semana mais forte, totais e uma leitura honesta
 - **Diário** ligado ao check-in de humor (nota livre, fica só no aparelho) e tela **Sobre** com o conceito, o nome e as fontes científicas
+- **Três abas** (Hoje, Evolução, Aprender). **Evolução**: antes e agora, constância semana a semana, o que mais cresceu, caminho até o automático (~66 dias, com a variação real do estudo), marcos e recomeços
+- **Humor e diário**: calendário do mês e do ano com cores por humor, detalhe do dia (humor, energia, nota, hábitos feitos) e frases de apoio
+- **Jardim**: crescimento desde o primeiro dia, resumo do que cresceu hoje, o que está perto de acontecer e "ver o jardim crescer"
+- **Aprender**: 29 guias curtos com a força da evidência (forte, moderada, preliminar ou debatida), o que a ciência mostra, mitos, passos práticos, limites e fontes; cada guia pode virar um hábito para testar por uma semana
 - **Backup em JSON** nos ajustes
 - **Estatísticas** (ícone de gráfico no topo), tudo calculado localmente:
   - Dias seguidos, melhor sequência e conclusão dos últimos 30 dias
@@ -70,7 +74,7 @@ src/
   app/            layout, manifest (PWA), página
   components/     telas, sheets, celebração, semana, check-in, retrospectiva, jardim, pausas
     habits/       StampCheck · NumericHabit · HabitCard
-      visuals/    12 visuais numéricos (registro em index.tsx)
+      visuals/    15 visuais numéricos (registro em index.tsx)
   lib/
     types.ts      modelo de dados e níveis (mínimo/ideal)
     stats.ts      sequências, mapa de calor, recuperação e padrões
@@ -79,7 +83,10 @@ src/
     pauses.ts     pausas planejadas (datas, motivos, textos)
     db.ts         IndexedDB (v2: hábitos, registros, ajustes, check-ins)
     store.tsx     estado global + persistência
-    phrases.ts    frases por momento e tom
+    phrases.ts    frases por momento e tom (+ phrases-more.ts)
+    guides*.ts    guias da aba Aprender (conteúdo com fontes)
+    evolution.ts  números de evolução e marcos
+    moodcal.ts    calendário de humor
     sound.ts      sons de feedback com Web Audio
     ambient.ts    mixer de som ambiente (chuva, vento, ondas, piano)
     templates.ts  hábitos prontos

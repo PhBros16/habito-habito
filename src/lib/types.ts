@@ -81,7 +81,9 @@ export interface Settings {
   retroSeenWeek: string | null; // segunda-feira da última retrospectiva aberta
   ambient: Levels; // volume de cada camada do som ambiente (0..1)
   pauses: Pause[];
-  obstacleSeen: Record<string, string>; // habitId -> dia em que a checagem de obstáculo foi dispensada
+  obstacleSeen: Record<string, string>; // chave (hábito ou sugestão) -> dia em que o aviso foi dispensado
+  automaticity: Record<string, { date: string; score: number }[]>; // habitId -> respostas (1 a 5) ao pulso de automaticidade
+  guidesRead: string[]; // guias da aba Aprender marcados como lidos
   seeded: boolean;
 }
 
@@ -95,6 +97,8 @@ export const defaultSettings: Settings = {
   ambient: { rain: 0.5, wind: 0, waves: 0, piano: 0.45 },
   pauses: [],
   obstacleSeen: {},
+  automaticity: {},
+  guidesRead: [],
   seeded: false,
 };
 

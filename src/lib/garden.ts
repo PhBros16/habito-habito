@@ -42,9 +42,9 @@ export function stageOf(days: number): number {
   return s;
 }
 
-/** Crescimento contínuo: rápido no começo, devagar depois (50 dias = pleno). */
+/** Crescimento contínuo: bem visível já nos primeiros dias, mais devagar depois (40 dias = pleno). */
 export function growthOf(days: number): number {
-  return Math.pow(Math.min(1, days / 50), 0.65);
+  return Math.pow(Math.min(1, days / 40), 0.45);
 }
 
 export function gardenPlants(
@@ -104,10 +104,14 @@ export function butterfliesFor(streak: number): number {
 /** Nível do jardim inteiro: a soma de dias feitos de todas as plantas destrava elementos na cena. */
 export const GARDEN_LEVELS = [
   { at: 0, name: "Terreno", unlock: "Um chão pronto para receber sementes." },
-  { at: 10, name: "Gramado", unlock: "Borboletas passam a visitar quando há sequência." },
-  { at: 40, name: "Jardim", unlock: "Um laguinho aparece, e vagalumes à noite." },
-  { at: 120, name: "Bosque", unlock: "Passarinhos cruzam o céu." },
-  { at: 300, name: "Santuário", unlock: "Lanternas acendem ao entardecer e à noite." },
+  { at: 3, name: "Clareira", unlock: "Florzinhas silvestres brotam no chão." },
+  { at: 8, name: "Gramado", unlock: "Borboletas passam a visitar quando há sequência." },
+  { at: 20, name: "Jardim", unlock: "Um laguinho aparece, e vagalumes à noite." },
+  { at: 45, name: "Bosque", unlock: "Passarinhos cruzam o céu." },
+  { at: 90, name: "Caminho", unlock: "Pedras desenham um caminho pelo jardim." },
+  { at: 160, name: "Santuário", unlock: "Lanternas acendem ao entardecer e à noite." },
+  { at: 300, name: "Aurora", unlock: "Um arco-íris de dia e uma aurora de noite." },
+  { at: 600, name: "Eterno", unlock: "Estrelas cadentes riscam o céu." },
 ];
 
 export interface GardenLevel {

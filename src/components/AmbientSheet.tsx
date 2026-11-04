@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Sheet } from "./Sheet";
+import { MeditationPanel } from "./MeditationPanel";
 import { accentColor } from "./habits/shared";
 import { useHabits } from "@/lib/store";
 import {
   LAYERS,
+  normalizeLevels,
   PRESETS,
   getSleep,
   isPlaying,
@@ -24,15 +26,43 @@ const TIMERS: { label: string; min: number | null }[] = [
   { label: "15 min", min: 15 },
   { label: "30 min", min: 30 },
   { label: "60 min", min: 60 },
+  { label: "90 min", min: 90 },
 ];
 
 const same = (a: Levels, b: Levels) => LAYERS.every(({ key }) => Math.abs(a[key] - b[key]) < 0.005);
 
 export function AmbientSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
-    <Sheet open={open} onClose={onClose} title="Som ambiente">
-      <Body />
+    <Sheet open={open} onClose={onClose} title="Som e meditação">
+      <Tabs />
     </Sheet>
+  );
+}
+
+function Tabs() {
+  const [tab, setTab] = useState<"som" | "meditar">("som");
+  return (
+    <div>
+      <div className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1" role="tablist">
+        {([["som", "Som ambiente"], ["meditar", "Meditar"]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className="relative min-h-11 rounded-full text-sm"
+            style={{ color: tab === id ? "var(--ink)" : "var(--muted)" }}
+          >
+            {tab === id && (
+              <motion.span layoutId="amb-tab" className="absolute inset-0 rounded-full bg-surface" style={{ boxShadow: "var(--shadow)" }} transition={{ type: "spring", stiffness: 420, damping: 34 }} />
+            )}
+            <span className="relative">{label}</span>
+          </button>
+        ))}
+      </div>
+      {tab === "som" ? <Body /> : <MeditationPanel />}
+    </div>
   );
 }
 
@@ -40,7 +70,8 @@ function Body() {
   const { settings, updateSettings } = useHabits();
   const playing = useSyncExternalStore(subscribe, isPlaying, () => false);
   const sleep = useSyncExternalStore(subscribe, getSleep, () => null);
-  const [levels, setLocal] = useState<Levels>(settings.ambient);
+  const [mixer, setMixer] = useState(false);
+  const [levels, setLocal] = useState<Levels>(normalizeLevels(settings.ambient));
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // o motor segue o que está na tela; salvar nos ajustes é adiado para não gravar a cada pixel
@@ -48,7 +79,7 @@ function Body() {
     setLevels(levels);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      if (!same(levels, settings.ambient)) updateSettings({ ambient: levels });
+      if (!same(levels, normalizeLevels(settings.ambient))) updateSettings({ ambient: levels });
     }, 350);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [levels]);
@@ -113,7 +144,26 @@ function Body() {
         })}
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="rounded-2xl border border-line px-4 py-1">
+        <button
+          type="button"
+          aria-expanded={mixer}
+          onClick={() => setMixer((m) => !m)}
+          className="flex min-h-12 w-full items-center justify-between text-sm"
+        >
+          <span>Misturar do seu jeito</span>
+          <motion.span animate={{ rotate: mixer ? 180 : 0 }} className="text-muted">⌄</motion.span>
+        </button>
+        <AnimatePresence initial={false}>
+          {mixer && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden"
+            >
+      <div className="flex flex-col gap-4 pt-3">
         {LAYERS.map(({ key, label }) => (
           <div key={key}>
             <div className="flex justify-between text-sm">
@@ -145,6 +195,11 @@ function Body() {
         ))}
       </div>
 
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <div>
         <h3 className="text-sm text-muted">Desligar sozinho</h3>
         <div className="mt-2.5 flex flex-wrap gap-2">
@@ -172,8 +227,7 @@ function Body() {
       </div>
 
       <p className="text-[12px] leading-relaxed text-muted">
-        O som é gerado no próprio aparelho e funciona offline. Se o navegador pausar com a tela
-        bloqueada, é só tocar de novo.
+        O som é gerado no próprio aparelho e funciona offline. Ele retoma sozinho quando você volta ao app.
       </p>
     </div>
   );

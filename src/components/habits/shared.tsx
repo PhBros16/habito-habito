@@ -4,9 +4,16 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { AccentKey, Habit } from "@/lib/types";
 
-export const accentColor = (a: AccentKey) => `var(--${a})`;
+/** Cores próprias (`custom-rrggbb`) caem no valor direto; as da paleta usam as variáveis do tema. */
+export const accentColor = (a: AccentKey) => (a.startsWith("custom-") ? `#${a.slice(7)}` : `var(--${a})`);
 export const accentSoft = (a: AccentKey, pct = 14) =>
-  `color-mix(in srgb, var(--${a}) ${pct}%, transparent)`;
+  `color-mix(in srgb, ${accentColor(a)} ${pct}%, transparent)`;
+export const customAccent = (r: number, g: number, b: number): AccentKey =>
+  `custom-${[r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("")}`;
+export const rgbOfAccent = (a: AccentKey): [number, number, number] | null =>
+  a.startsWith("custom-") && /^[0-9a-f]{6}$/i.test(a.slice(7))
+    ? [parseInt(a.slice(7, 9), 16), parseInt(a.slice(9, 11), 16), parseInt(a.slice(11, 13), 16)]
+    : null;
 
 export interface HabitViewProps {
   habit: Habit;

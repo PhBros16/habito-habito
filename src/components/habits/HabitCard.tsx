@@ -19,9 +19,11 @@ interface Props {
   /** progresso da meta semanal/mensal, quando o hábito tem frequência */
   progress?: { done: number; goal: number; label: string } | null;
   readOnly?: boolean;
+  /** hoje não é um dos dias fixos do hábito */
+  offDay?: boolean;
 }
 
-export function HabitCard({ habit, value, onChange, onRemove, onEdit, onToggleEssential, onDetails, progress, readOnly }: Props) {
+export function HabitCard({ habit, value, onChange, onRemove, onEdit, onToggleEssential, onDetails, progress, readOnly, offDay }: Props) {
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const View = habit.kind === "check" ? StampCheck : NumericHabit;
@@ -43,7 +45,6 @@ export function HabitCard({ habit, value, onChange, onRemove, onEdit, onToggleEs
 
   return (
     <motion.article
-      layout
       initial={{ opacity: 0, y: 18, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
@@ -53,10 +54,11 @@ export function HabitCard({ habit, value, onChange, onRemove, onEdit, onToggleEs
       <header className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <i
-              className="block h-2 w-2 rounded-full"
-              style={{ background: accentColor(habit.accent) }}
-            />
+            {habit.emoji ? (
+              <span className="text-lg leading-none" aria-hidden>{habit.emoji}</span>
+            ) : (
+              <i className="block h-2 w-2 rounded-full" style={{ background: accentColor(habit.accent) }} />
+            )}
             <h2 className="font-display truncate text-xl">{habit.name}</h2>
             {habit.essential && (
               <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted">
@@ -117,6 +119,9 @@ export function HabitCard({ habit, value, onChange, onRemove, onEdit, onToggleEs
         </div>
       </header>
 
+      {offDay && (
+        <p className="-mt-2 mb-3 text-[12px] text-muted">Hoje é dia de folga deste hábito. Se fizer, conta do mesmo jeito.</p>
+      )}
       {progress && (
         <div className="-mt-1 mb-3 flex items-center gap-2 text-[12px] text-muted" aria-label={`${progress.done} de ${progress.goal} ${progress.label}`}>
           <span className="flex gap-1">

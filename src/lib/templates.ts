@@ -11,6 +11,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Corpo",
     blurb: "O copo que enche a cada gole",
     habit: {
+      emoji: "💧",
       name: "Água",
       kind: "counter",
       accent: "water",
@@ -27,6 +28,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Mente",
     blurb: "Páginas que se acumulam",
     habit: {
+      emoji: "📖",
       name: "Leitura",
       kind: "progress",
       accent: "sand",
@@ -39,44 +41,11 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     },
   },
   {
-    key: "meditar",
-    group: "Mente",
-    blurb: "Um selo para cada nível",
-    habit: {
-      name: "Respirar",
-      kind: "check",
-      accent: "lilac",
-      unit: "",
-      minimum: 1,
-      target: 2,
-      minLabel: "1 minuto",
-      idealLabel: "10 minutos",
-      identity: "Sou alguém que encontra calma.",
-      essential: true,
-    },
-  },
-  {
-    key: "movimento",
-    group: "Corpo",
-    blurb: "Do alongamento ao treino completo",
-    habit: {
-      name: "Movimento",
-      kind: "check",
-      accent: "clay",
-      unit: "",
-      minimum: 1,
-      target: 2,
-      minLabel: "Alongar 5 min",
-      idealLabel: "Treino completo",
-      identity: "Sou alguém que se move todo dia.",
-      essential: false,
-    },
-  },
-  {
     key: "cama",
     group: "Rotina",
     blurb: "Simples: feito ou não",
     habit: {
+      emoji: "🛏️",
       name: "Arrumar a cama",
       kind: "check",
       accent: "sage",
@@ -92,6 +61,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Mente",
     blurb: "Minutos de foco acumulados",
     habit: {
+      emoji: "🎓",
       name: "Estudo",
       kind: "progress",
       accent: "sun",
@@ -108,6 +78,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Corpo",
     blurb: "Uma lua que enche e estrelas a cada hora",
     habit: {
+      emoji: "🌙",
       name: "Sono",
       kind: "progress",
       accent: "lilac",
@@ -124,6 +95,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Corpo",
     blurb: "Pegadas numa trilha até a bandeira",
     habit: {
+      emoji: "🚶",
       name: "Caminhada",
       kind: "progress",
       accent: "sage",
@@ -138,8 +110,9 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
   {
     key: "treino",
     group: "Corpo",
-    blurb: "Uma anilha a cada série",
+    blurb: "Cada série faz o bíceps contrair",
     habit: {
+      emoji: "💪",
       name: "Treino",
       kind: "counter",
       accent: "clay",
@@ -156,6 +129,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Mente",
     blurb: "A areia passa conforme o tempo de foco",
     habit: {
+      emoji: "🎯",
       name: "Foco profundo",
       kind: "progress",
       accent: "sand",
@@ -168,26 +142,11 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     },
   },
   {
-    key: "idioma",
-    group: "Mente",
-    blurb: "Um broto que vira flor com a prática",
-    habit: {
-      name: "Praticar idioma",
-      kind: "progress",
-      accent: "sage",
-      visual: "plant",
-      unit: "minutos",
-      minimum: 5,
-      target: 30,
-      identity: "Sou alguém que aprende sempre.",
-      essential: false,
-    },
-  },
-  {
     key: "escrever",
     group: "Mente",
     blurb: "Uma chama que cresce com a escrita",
     habit: {
+      emoji: "✍️",
       name: "Escrever",
       kind: "progress",
       accent: "clay",
@@ -204,6 +163,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Mente",
     blurb: "Um coração que se enche de gratidão",
     habit: {
+      emoji: "🙏",
       name: "Gratidão",
       kind: "counter",
       accent: "clay",
@@ -220,6 +180,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Rotina",
     blurb: "O sol nasce quando você levanta",
     habit: {
+      emoji: "🌅",
       name: "Acordar cedo",
       kind: "check",
       accent: "sun",
@@ -238,6 +199,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Rotina",
     blurb: "A lâmpada apaga no fim do dia",
     habit: {
+      emoji: "🪔",
       name: "Ritual da noite",
       kind: "check",
       accent: "lilac",
@@ -256,6 +218,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Dinheiro",
     blurb: "Moedas caindo no pote",
     habit: {
+      emoji: "💰",
       name: "Guardar dinheiro",
       kind: "progress",
       accent: "sun",
@@ -268,28 +231,11 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     },
   },
   {
-    key: "academia",
-    group: "Corpo",
-    blurb: "Academia 3x por semana, anilhas na barra",
-    habit: {
-      name: "Academia",
-      kind: "check",
-      accent: "clay",
-      visual: "stamp",
-      unit: "",
-      minimum: 1,
-      target: 1,
-      period: "week",
-      periodGoal: 3,
-      identity: "Sou alguém que treina e fica mais forte.",
-      essential: false,
-    },
-  },
-  {
     key: "corrida",
     group: "Corpo",
     blurb: "A corredora dá a volta na pista",
     habit: {
+      emoji: "🏃",
       name: "Corrida",
       kind: "progress",
       accent: "water",
@@ -308,6 +254,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Corpo",
     blurb: "Cinco minutos já contam",
     habit: {
+      emoji: "🤸",
       name: "Alongar",
       kind: "check",
       accent: "sage",
@@ -326,6 +273,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Abstinência",
     blurb: "Escudo que enche a cada dia firme",
     habit: {
+      emoji: "🍬",
       name: "Ficar sem açúcar",
       kind: "check",
       accent: "clay",
@@ -342,6 +290,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Abstinência",
     blurb: "Menos tela, mais vida",
     habit: {
+      emoji: "📵",
       name: "Sem redes sociais",
       kind: "check",
       accent: "lilac",
@@ -360,6 +309,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Abstinência",
     blurb: "Um dia de cada vez",
     habit: {
+      emoji: "🍷",
       name: "Sem álcool",
       kind: "check",
       accent: "water",
@@ -376,6 +326,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Abstinência",
     blurb: "Cada dia firme é uma vitória",
     habit: {
+      emoji: "🚭",
       name: "Sem fumar",
       kind: "check",
       accent: "sage",
@@ -390,8 +341,9 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
   {
     key: "meditacao",
     group: "Mente",
-    blurb: "Uma flor que abre a cada minuto",
+    blurb: "Uma flor que abre a cada minuto de calma",
     habit: {
+      emoji: "🪷",
       name: "Meditação",
       kind: "progress",
       accent: "lilac",
@@ -404,26 +356,11 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     },
   },
   {
-    key: "projeto",
-    group: "Mente",
-    blurb: "Suba a montanha, um passo por dia",
-    habit: {
-      name: "Projeto pessoal",
-      kind: "progress",
-      accent: "sun",
-      visual: "mountain",
-      unit: "minutos",
-      minimum: 10,
-      target: 45,
-      identity: "Sou alguém que termina o que começa.",
-      essential: false,
-    },
-  },
-  {
     key: "remedio",
     group: "Rotina",
     blurb: "Cápsula que se encaixa",
     habit: {
+      emoji: "💊",
       name: "Vitaminas e remédios",
       kind: "check",
       accent: "sage",
@@ -436,44 +373,11 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     },
   },
   {
-    key: "sol",
-    group: "Corpo",
-    blurb: "Dez minutos de luz natural",
-    habit: {
-      name: "Tomar sol",
-      kind: "check",
-      accent: "sun",
-      visual: "sunrise",
-      unit: "",
-      minimum: 1,
-      target: 2,
-      minLabel: "5 minutos",
-      idealLabel: "15 minutos",
-      identity: "Sou alguém que busca a luz do dia.",
-      essential: false,
-    },
-  },
-  {
-    key: "cozinhar",
-    group: "Rotina",
-    blurb: "Refeições feitas em casa",
-    habit: {
-      name: "Cozinhar em casa",
-      kind: "counter",
-      accent: "sand",
-      visual: "beads",
-      unit: "refeições",
-      minimum: 1,
-      target: 2,
-      identity: "Sou alguém que se alimenta com cuidado.",
-      essential: false,
-    },
-  },
-  {
     key: "ligar",
     group: "Rotina",
     blurb: "Cuidar de quem importa",
     habit: {
+      emoji: "📞",
       name: "Falar com alguém querido",
       kind: "check",
       accent: "clay",
@@ -490,6 +394,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     group: "Rotina",
     blurb: "Dez minutos de ordem",
     habit: {
+      emoji: "🧹",
       name: "Organizar a casa",
       kind: "progress",
       accent: "sand",
@@ -502,44 +407,11 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
     },
   },
   {
-    key: "terapia",
-    group: "Mente",
-    blurb: "Um diário de uma linha",
-    habit: {
-      name: "Escrever um diário",
-      kind: "check",
-      accent: "lilac",
-      visual: "lamp",
-      unit: "",
-      minimum: 1,
-      target: 2,
-      minLabel: "Uma linha",
-      idealLabel: "Uma página",
-      identity: "Sou alguém que se escuta.",
-      essential: false,
-    },
-  },
-  {
-    key: "planejar",
-    group: "Mente",
-    blurb: "Três prioridades do dia",
-    habit: {
-      name: "Planejar o dia",
-      kind: "check",
-      accent: "water",
-      visual: "sunrise",
-      unit: "",
-      minimum: 1,
-      target: 1,
-      identity: "Sou alguém que escolhe o que importa.",
-      essential: false,
-    },
-  },
-  {
     key: "dentes",
     group: "Rotina",
     blurb: "Fio dental também",
     habit: {
+      emoji: "🪥",
       name: "Cuidar dos dentes",
       kind: "counter",
       accent: "water",
@@ -551,23 +423,7 @@ export const TEMPLATES: { key: string; group: TemplateGroup; blurb: string; habi
       essential: false,
     },
   },
-  {
-    key: "mobilidade",
-    group: "Corpo",
-    blurb: "Passos que viram quilômetros",
-    habit: {
-      name: "Passos do dia",
-      kind: "progress",
-      accent: "sage",
-      visual: "steps",
-      unit: "passos",
-      minimum: 2000,
-      target: 8000,
-      identity: "Sou alguém que se movimenta.",
-      essential: false,
-    },
-  },
 ];
 
 /** Hábitos iniciais para o app não abrir vazio. */
-export const SEED_KEYS = ["agua", "leitura", "meditar"];
+export const SEED_KEYS: string[] = [];

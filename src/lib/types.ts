@@ -18,7 +18,11 @@ export type NumericVisualKey =
   | "mountain";
 export type CheckVisualKey = "stamp" | "sunrise" | "lamp" | "shield" | "pill" | "sparkle";
 export type VisualKey = NumericVisualKey | CheckVisualKey;
-export type AccentKey = "sage" | "water" | "sand" | "clay" | "lilac" | "sun";
+export type PresetAccent =
+  | "sage" | "water" | "sand" | "clay" | "lilac" | "sun"
+  | "rose" | "teal" | "indigo" | "olive" | "coral" | "slate";
+/** Cor da paleta do app ou uma cor própria no formato `custom-rrggbb`. */
+export type AccentKey = PresetAccent | `custom-${string}`;
 export type Tone = "gentle" | "stoic" | "direct" | "humor";
 export type ThemePref = "system" | "light" | "dark";
 export type Level = 0 | 1 | 2; // 0 = nada, 1 = mínimo, 2 = ideal
@@ -49,6 +53,9 @@ export interface Habit {
   anchor?: string; // plano se-então: "depois do café"
   period?: Period; // frequência da meta: todo dia (padrão), X vezes por semana ou por mês
   periodGoal?: number; // quantas vezes por semana/mês (só quando period != "day")
+  emoji?: string; // marca do hábito (aparece no cartão e nas listas)
+  days?: number[]; // dias fixos da semana (0=dom..6=sáb); vale com period "week"
+  reminder?: { time: string; days?: number[] }; // lembrete (HH:MM)
   essential: boolean; // aparece no "dia difícil"
   createdAt: string; // ISO
   order: number;
@@ -85,6 +92,16 @@ export interface Settings {
   automaticity: Record<string, { date: string; score: number }[]>; // habitId -> respostas (1 a 5) ao pulso de automaticidade
   guidesRead: string[]; // guias da aba Aprender marcados como lidos
   seeded: boolean;
+  profile?: Profile; // respostas do onboarding
+  onboarded?: boolean;
+  profileOfferDismissed?: boolean;
+}
+
+export interface Profile {
+  goal: string; // maior objetivo hoje
+  future: string; // quem quer ser em 1 ano
+  slot: "manha" | "tarde" | "noite" | "varia"; // quando o dia costuma ser mais livre
+  hurdle?: string; // o que costuma atrapalhar
 }
 
 export const defaultSettings: Settings = {
@@ -94,7 +111,7 @@ export const defaultSettings: Settings = {
   hardDayDate: null,
   offerDismissedDate: null,
   retroSeenWeek: null,
-  ambient: { rain: 0.5, wind: 0, waves: 0, piano: 0.45 },
+  ambient: { rain: 0.5, wind: 0, waves: 0, piano: 0.45, fire: 0, river: 0, crickets: 0, bowl: 0, focus: 0 },
   pauses: [],
   obstacleSeen: {},
   automaticity: {},

@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
+import { Collapse } from "./Collapse";
+import { askNotifications, downloadIcs, notificationState } from "@/lib/reminders";
 import { Sheet } from "./Sheet";
 import { useHabits } from "@/lib/store";
 import { TONE_LABEL } from "@/lib/phrases";
@@ -32,7 +35,7 @@ function Segment<T extends string>({
             type="button"
             whileTap={{ scale: 0.97 }}
             onClick={() => onChange(o.key)}
-            className="rounded-2xl border px-2 py-2.5 text-sm transition-colors"
+            className="min-h-11 rounded-2xl border px-2 text-sm transition-colors"
             style={{
               borderColor: active ? "var(--sage)" : "var(--line)",
               background: active ? "color-mix(in srgb, var(--sage) 14%, transparent)" : "transparent",
@@ -59,7 +62,9 @@ export function SettingsSheet({
   onOpenAbout: () => void;
   onOpenDiary: () => void;
 }) {
-  const { settings, updateSettings, exportJson } = useHabits();
+  const { settings, updateSettings, exportJson, habits } = useHabits();
+  const [notif, setNotif] = useState(notificationState());
+  const withReminder = habits.filter((h) => h.reminder);
 
   const download = () => {
     const blob = new Blob([exportJson()], { type: "application/json" });
@@ -107,6 +112,59 @@ export function SettingsSheet({
               animate={{ x: settings.sound ? 24 : 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 32 }}
             />
+          </button>
+        </section>
+
+        <Collapse title="Seu perfil" summary={settings.profile?.future || settings.profile?.goal || "Conte o que você quer. As frases passam a falar com você."}>
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5 text-sm text-muted">
+              Seu maior objetivo hoje
+              <input
+                value={settings.profile?.goal ?? ""}
+                onChange={(e) => updateSettings({ profile: { slot: "varia", future: "", ...settings.profile, goal: e.target.value } })}
+                maxLength={60}
+                className="min-h-12 rounded-2xl border border-line bg-transparent px-4 outline-none focus:border-sage"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm text-muted">
+              Quem você quer ser daqui a um ano
+              <input
+                value={settings.profile?.future ?? ""}
+                onChange={(e) => updateSettings({ profile: { slot: "varia", goal: "", ...settings.profile, future: e.target.value } })}
+                maxLength={70}
+                placeholder="Alguém que…"
+                className="min-h-12 rounded-2xl border border-line bg-transparent px-4 outline-none focus:border-sage"
+              />
+            </label>
+          </div>
+        </Collapse>
+
+        <section className="flex flex-col gap-2.5">
+          <h3 className="text-sm text-muted">Lembretes</h3>
+          {notif !== "unsupported" && notif !== "granted" && (
+            <button
+              type="button"
+              onClick={async () => setNotif((await askNotifications()) ? "granted" : "denied")}
+              className="min-h-12 rounded-2xl border border-line px-4 py-3 text-left text-sm"
+            >
+              Ativar avisos neste aparelho
+              <span className="block text-[13px] text-muted">
+                {notif === "denied" ? "Bloqueado no navegador: libere nas configurações do site." : "Aparecem quando o app está aberto ou em segundo plano."}
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={withReminder.length === 0}
+            onClick={() => downloadIcs(habits)}
+            className="min-h-12 rounded-2xl border border-line px-4 py-3 text-left text-sm disabled:opacity-50"
+          >
+            Levar lembretes para o calendário (.ics)
+            <span className="block text-[13px] text-muted">
+              {withReminder.length === 0
+                ? "Defina um horário em “Mais opções” ao editar um hábito."
+                : "Tocam no horário mesmo com o app fechado."}
+            </span>
           </button>
         </section>
 

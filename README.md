@@ -100,3 +100,13 @@ scripts/
 
 - **Fase 2 (resta):** rotinas com horários, notificações, empilhamento de hábitos
 - **Fase 3:** retrospectiva anual
+
+## Novidades da rodada 4
+
+- Primeiro acesso com guia leve e perguntas de perfil (objetivo, quem quer ser) que personalizam as frases.
+- Criar hábito: grupos recolhíveis, emoji no lugar da letra, paleta ampliada + RGB, dias fixos da semana, campos numéricos com vírgula e sem zero preso, lembretes (.ics e aviso no app).
+- Ordenar hábitos arrastando; sheets travam o fundo e fecham com botão grande.
+- Treino com bíceps 💪; visuais revisados.
+- Som ambiente com 9 camadas, agendado pelo relógio de áudio (sem pausas em segundo plano) e retomada automática; sessão de meditação com timer por relógio do sistema.
+- Diário recolhido (só "Ver Diário"), jardim expansível, Sobre com ilustração e pronúncia.
+- `tests/`: scripts Playwright de rotina real (`python3 -I tests/t5.py` com `next start -p 3111`).

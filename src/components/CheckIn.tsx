@@ -161,8 +161,8 @@ export function CheckIn({
                 );
               })}
             </div>
-            <p className="mt-2 min-h-[1.25rem] text-center text-[12px] text-muted">
-              {mood !== undefined ? MOOD_LABEL[mood] : "Toque no rosto que combina"}
+            <p className={`text-center text-[12px] text-muted ${mood !== undefined ? "mt-2 min-h-[1.25rem]" : ""}`}>
+              {mood !== undefined ? MOOD_LABEL[mood] : ""}
             </p>
 
             <AnimatePresence initial={false}>
@@ -244,20 +244,26 @@ function Note({ date, onOpenDiary }: { date: string; onOpenDiary?: () => void })
   };
 
   return (
-    <div className="border-t border-line px-4 py-3">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => {
-          if (open) flush();
-          setOpen((o) => !o);
-        }}
-        className="flex w-full items-center gap-2 text-left text-sm text-muted"
-      >
-        <span aria-hidden>✎</span>
-        <span className="min-w-0 flex-1 truncate">{saved && !open ? saved : "Escrever sobre o dia (opcional)"}</span>
-        <span className="text-xs">{open ? "fechar" : saved ? "editar" : ""}</span>
-      </button>
+    <div className="border-t border-line px-4 py-1.5">
+      <div className="flex items-center gap-1 text-sm text-muted">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => {
+            if (open) flush();
+            setOpen((o) => !o);
+          }}
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <span aria-hidden>✎</span>
+          <span className="min-w-0 flex-1 truncate">{open ? "Escreva sobre o seu dia" : saved ? "Continuar escrevendo" : "Escreva sobre o seu dia"}</span>
+        </button>
+        {onOpenDiary && saved && !open && (
+          <button type="button" onClick={onOpenDiary} className="min-h-11 rounded-full px-3 text-[13px] underline underline-offset-2">
+            Ver Diário
+          </button>
+        )}
+      </div>
       <AnimatePresence initial={false}>
         {open && (
           <motion.div {...reveal} className="overflow-hidden">
@@ -269,15 +275,22 @@ function Note({ date, onOpenDiary }: { date: string; onOpenDiary?: () => void })
               rows={4}
               maxLength={1000}
               placeholder="O que foi bom hoje? O que pesou? Pode ser uma linha só."
-              className="mt-3 w-full resize-none rounded-2xl border border-line bg-transparent px-4 py-3 text-[15px] leading-snug outline-none focus:border-sage"
+              className="mt-1 w-full resize-none rounded-2xl border border-line bg-transparent px-4 py-3 text-[15px] leading-snug outline-none focus:border-sage"
             />
-            <div className="mt-1.5 flex items-center justify-between text-[12px] text-muted">
-              <span>Fica só no seu aparelho.</span>
-              {onOpenDiary && (
-                <button type="button" onClick={onOpenDiary} className="underline underline-offset-2">
-                  Ver diário
+            <div className="mt-2 flex items-center justify-between pb-2">
+              {onOpenDiary ? (
+                <button type="button" onClick={() => { flush(); onOpenDiary(); }} className="min-h-11 px-1 text-[13px] text-muted underline underline-offset-2">
+                  Ver Diário
                 </button>
-              )}
+              ) : <span />}
+              <button
+                type="button"
+                onClick={() => { flush(); setOpen(false); }}
+                className="min-h-11 rounded-full px-6 text-sm font-medium"
+                style={{ background: "var(--ink)", color: "var(--bg)" }}
+              >
+                Pronto
+              </button>
             </div>
           </motion.div>
         )}

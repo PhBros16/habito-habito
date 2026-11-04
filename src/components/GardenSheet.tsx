@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Sheet } from "./Sheet";
+import { Collapse } from "./Collapse";
 import { GardenScene } from "./Garden";
 import { accentColor } from "./habits/shared";
 import { useHabits } from "@/lib/store";
@@ -218,6 +219,7 @@ function Body({ today }: { today: string }) {
   const plants = replay.data?.plants ?? livePlants;
   const streak = replay.data?.streak ?? liveStreak;
   const [openId, setOpenId] = useState<string | null>(null);
+  const [plantsOpen, setPlantsOpen] = useState(true);
   const level = gardenLevel(plants);
 
   if (plants.length === 0) {
@@ -231,7 +233,10 @@ function Body({ today }: { today: string }) {
   return (
     <div className="flex flex-col gap-5 pb-2">
       <div className="-mx-1 overflow-hidden rounded-3xl border border-line">
-        <GardenScene plants={plants} hour={hour} streak={streak} onPick={(id) => setOpenId((c) => (c === id ? null : id))} />
+        <GardenScene plants={plants} hour={hour} streak={streak} onPick={(id) => {
+          setOpenId((c) => (c === id ? null : id));
+          setPlantsOpen(true);
+        }} />
       </div>
 
       {replay.can && (
@@ -258,9 +263,12 @@ function Body({ today }: { today: string }) {
         </div>
       )}
 
-      <Today plants={plants} level={level} today={today} />
+      <Collapse title="Hoje e o que vem" summary={`${plants.filter((p) => p.doneToday).length} de ${plants.length} regadas hoje`} defaultOpen>
+        <Today plants={plants} level={level} today={today} />
+      </Collapse>
 
-      <div className="rounded-2xl border border-line p-3.5">
+      <Collapse title={`Nível ${level.index + 1}: ${level.name}`} summary={`${level.total} ${level.total === 1 ? "dia" : "dias"} somados`}>
+      <div>
         <div className="flex items-center justify-between gap-3">
           <span className="font-display text-lg">Nível {level.index + 1}: {level.name}</span>
           <span className="text-sm text-muted">{level.total} {level.total === 1 ? "dia" : "dias"} somados</span>
@@ -280,11 +288,8 @@ function Body({ today }: { today: string }) {
           ))}
         </ul>
       </div>
-      <p className="text-[13px] leading-relaxed text-muted">
-        Cada dia em que você faz um hábito, a planta dele cresce. Nada morre aqui: se você
-        sumir, a planta só descansa e volta a crescer quando você voltar.
-      </p>
-
+      </Collapse>
+      <Collapse title="Suas plantas" summary="Toque numa planta para ver a jornada" open={plantsOpen} onToggle={setPlantsOpen}>
       <div className="flex flex-col gap-2.5">
         {plants.map((p, i) => {
           const next = STAGE_DAYS[p.stage + 1];
@@ -300,7 +305,7 @@ function Body({ today }: { today: string }) {
               <button type="button" className="block w-full text-left" aria-expanded={openId === p.habit.id} onClick={() => setOpenId((c) => (c === p.habit.id ? null : p.habit.id))}>
               <div className="flex items-center justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-2">
-                  <i className="block h-2 w-2 shrink-0 rounded-full" style={{ background: accentColor(p.habit.accent) }} />
+                  {p.habit.emoji ? <span className="text-lg leading-none" aria-hidden>{p.habit.emoji}</span> : <i className="block h-2 w-2 shrink-0 rounded-full" style={{ background: accentColor(p.habit.accent) }} />}
                   <span className="font-display truncate text-lg">{p.habit.name}</span>
                 </span>
                 <span className="shrink-0 text-sm text-muted">{STAGE_NAMES[p.stage]}</span>
@@ -348,6 +353,7 @@ function Body({ today }: { today: string }) {
           );
         })}
       </div>
+      </Collapse>
     </div>
   );
 }

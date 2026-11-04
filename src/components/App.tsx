@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { HabitsProvider, useHabits } from "@/lib/store";
 import { dateKey, greetingOf, lastDays, longDate, momentOf, parseKey, relativeLabel } from "@/lib/dates";
 import { phraseFor, randomPhrase, type PhraseMoment } from "@/lib/phrases";
@@ -30,6 +30,10 @@ import { GardenCard, GardenSheet } from "./GardenSheet";
 import { PauseSheet } from "./PauseSheet";
 import { activePause, rangeText } from "@/lib/pauses";
 import { isPlaying, subscribe } from "@/lib/ambient";
+import { ReorderSheet } from "./ReorderSheet";
+import { Onboarding } from "./Onboarding";
+import { dueReminders, markNotified, systemNotify, wasNotified } from "@/lib/reminders";
+import { profileLine } from "@/lib/profile";
 import { missedRun, reviewWeekStart } from "@/lib/stats";
 import { CheckIn } from "./CheckIn";
 import { isLowDay } from "@/lib/checkin";
@@ -49,7 +53,14 @@ export function App() {
 /** Casca estática (pré-renderizada) → só monta a tela real no cliente, com os dados prontos. */
 function Home() {
   const { ready } = useHabits();
-  return ready ? <Main /> : <Skeleton />;
+  const { settings, habits } = useHabits();
+  if (!ready) return <Skeleton />;
+  return (
+    <>
+      <Main />
+      <AnimatePresence>{!settings.onboarded && habits.length === 0 && <Onboarding key="onb" />}</AnimatePresence>
+    </>
+  );
 }
 
 const OBSTACLES: { label: string; action: "edit" | "tip"; tip: string }[] = [
@@ -58,6 +69,11 @@ const OBSTACLES: { label: string; action: "edit" | "tip"; tip: string }[] = [
   { label: "Sem tempo", action: "tip", tip: "Tente a versão de 1 minuto: o mínimo conta." },
   { label: "Sem energia", action: "tip", tip: "Ligue o dia difícil quando precisar: só o essencial." },
 ];
+
+const dowOf = (key: string) => {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d).getDay();
+};
 
 function Main() {
   const {
@@ -93,6 +109,7 @@ function Main() {
   const [ambientOpen, setAmbientOpen] = useState(false);
   const [gardenOpen, setGardenOpen] = useState(false);
   const [pauseOpen, setPauseOpen] = useState(false);
+  const [reorderOpen, setReorderOpen] = useState(false);
   const [diaryOpen, setDiaryOpen] = useState(false);
   const [moodOpen, setMoodOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("today");
@@ -101,6 +118,7 @@ function Main() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const ambientOn = useSyncExternalStore(subscribe, isPlaying, () => false);
+  const remindRef = useRef<(text: string) => void>(() => {});
   const [celebrate, setCelebrate] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -136,7 +154,7 @@ function Main() {
   const reviewStart = reviewWeekStart(today);
   const dowToday = parseKey(today).getDay();
   const retroOffer =
-    isToday && (dowToday === 0 || dowToday === 1 || dowToday === 2) && settings.retroSeenWeek !== reviewStart;
+    isToday && evo.activeDays >= 2 && (dowToday === 0 || dowToday === 1 || dowToday === 2) && settings.retroSeenWeek !== reviewStart;
 
   // Em dia pesado (humor ou energia baixos) as frases ficam mais acolhedoras.
   const lowDay = isLowDay(getCheckin(today));
@@ -167,8 +185,13 @@ function Main() {
   const phrase = useMemo(() => {
     if (!isToday) return "";
     if (hardDay || lowDay || pauseNow) return phraseFor(settings.tone, "hardDay", today);
+    // algumas vezes por semana, a frase cita o que a pessoa contou no começo
+    if (dayContext === "morning" || dayContext === "afternoon" || dayContext === "evening" || dayContext === "partial") {
+      const mine = profileLine(settings.profile, today);
+      if (mine && (today.charCodeAt(9) + today.charCodeAt(8)) % 3 === 0) return mine;
+    }
     return phraseFor(settings.tone, dayContext, today);
-  }, [isToday, hardDay, lowDay, pauseNow, settings.tone, dayContext, today]);
+  }, [isToday, hardDay, lowDay, pauseNow, settings.tone, settings.profile, dayContext, today]);
 
   let stuck: { habit: Habit; days: number } | null = null;
   if (isToday && !pauseNow && !hardDay) {
@@ -212,6 +235,36 @@ function Main() {
     setToast({ id, text });
     timers.current.push(setTimeout(() => setToast((t) => (t?.id === id ? null : t)), Math.max(2600, text.length * 55)));
   };
+
+  // lembretes: confere a cada 30 s se algum horário já chegou (com o app aberto)
+  useEffect(() => {
+    remindRef.current = showToast;
+  });
+  useEffect(() => {
+    const check = () => {
+      const now = new Date();
+      const day = dateKey(now);
+      const due = dueReminders(
+        habits,
+        now,
+        (h) => levelOf(h, getValue(h.id, day)) >= 1,
+        (h) => wasNotified(h, day)
+      );
+      for (const h of due) {
+        markNotified(h, day);
+        const text = `${h.emoji ?? "🔔"} Hora de: ${h.name}. O mínimo já conta.`;
+        remindRef.current(text);
+        if (document.visibilityState !== "visible") void systemNotify("Enso", `${h.name}: o mínimo já conta.`);
+      }
+    };
+    check();
+    const t = setInterval(check, 30_000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [habits, getValue]);
 
   const handleChange = (habit: Habit, value: number) => {
     const before = levelOf(habit, getValue(habit.id, selected));
@@ -284,9 +337,9 @@ function Main() {
           {isToday ? (
             <motion.p
               key={phrase}
-              initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="font-display text-xl leading-snug text-ink/90"
             >
@@ -370,7 +423,16 @@ function Main() {
             className="overflow-hidden"
           >
             <div className="mt-5 rounded-3xl border p-4" style={{ borderColor: "var(--sage)" }}>
-              <p className="font-display text-lg">Dia difícil ligado</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-display text-lg">Dia difícil ligado</p>
+                <button
+                  type="button"
+                  onClick={() => updateSettings({ hardDayDate: null })}
+                  className="min-h-9 rounded-full bg-surface-2 px-4 text-[13px] text-muted active:scale-95"
+                >
+                  Voltar ao normal
+                </button>
+              </div>
               <p className="mt-1 text-sm leading-snug text-muted">
                 {essentials.length > 0
                   ? `Hoje só ${essentials.length === 1 ? "o hábito essencial aparece" : "os hábitos essenciais aparecem"}. Os outros voltam amanhã, sem nenhuma culpa.`
@@ -400,13 +462,6 @@ function Main() {
                   </div>
                 </div>
               )}
-              <button
-                type="button"
-                onClick={() => updateSettings({ hardDayDate: null })}
-                className="mt-3 rounded-full border border-line px-4 py-2 text-sm text-muted"
-              >
-                Desligar
-              </button>
             </div>
           </motion.div>
         )}
@@ -614,14 +669,20 @@ function Main() {
         {useEssentialOnly ? (
           <span style={{ color: "var(--sage)" }}>só o essencial</span>
         ) : (
-          <button type="button" onClick={() => setAddOpen(true)} className="flex items-center gap-1 text-[13px]">
-            <PlusIcon /> Novo
-          </button>
+          <span className="flex items-center gap-1">
+            {habits.length > 1 && (
+              <button type="button" onClick={() => setReorderOpen(true)} className="min-h-11 rounded-full px-3 text-[13px]">
+                Ordenar
+              </button>
+            )}
+            <button type="button" onClick={() => setAddOpen(true)} className="flex min-h-11 items-center gap-1 rounded-full px-3 text-[13px]">
+              <PlusIcon /> Novo
+            </button>
+          </span>
         )}
       </div>
 
       {/* hábitos */}
-      <LayoutGroup>
         <div className="mt-3 flex flex-col gap-4">
           <AnimatePresence initial>
             {visible.map((h) => (
@@ -634,6 +695,7 @@ function Main() {
                 onEdit={() => setEditing(h)}
                 onDetails={() => setDetailId(h.id)}
                 onToggleEssential={() => updateHabit(h.id, { essential: !h.essential })}
+                offDay={!!h.days?.length && !h.days.includes(dowOf(selected))}
                 progress={
                   isPeriodic(h)
                     ? { done: periodDone(h, selected, getValue), goal: goalOf(h), label: h.period === "week" ? "nesta semana" : "neste mês" }
@@ -643,7 +705,6 @@ function Main() {
             ))}
           </AnimatePresence>
         </div>
-      </LayoutGroup>
 
       {/* jardim: cada hábito vira uma planta */}
       <GardenCard today={today} onOpen={() => setGardenOpen(true)} />
@@ -772,6 +833,7 @@ function Main() {
       />
       <AboutSheet open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <GardenSheet open={gardenOpen} onClose={() => setGardenOpen(false)} today={today} />
+      <ReorderSheet open={reorderOpen} onClose={() => setReorderOpen(false)} />
       <AmbientSheet open={ambientOpen} onClose={() => setAmbientOpen(false)} />
       <WeekReviewSheet open={reviewOpen} onClose={() => setReviewOpen(false)} weekStart={reviewStart} />
 

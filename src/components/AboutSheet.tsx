@@ -1,6 +1,9 @@
 "use client";
 
-import { motion } from "motion/react";
+import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { speakEnso } from "@/lib/speak";
+import { EnsoMark } from "./EnsoMark";
 import { Sheet } from "./Sheet";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 
@@ -67,69 +70,115 @@ const PRINCIPLES: { title: string; text: string; source: string; where: string }
   },
 ];
 
-/** Tela "Sobre": o conceito do app, o motivo do nome e a ciência por trás. */
+const ART_BG = ["sage", "sun", "clay", "lilac", "water", "sage", "sun", "clay", "lilac", "water"] as const;
+
+/** Ilustrações abstratas, uma por princípio (traços finos, cores do tema). */
+function Art({ i }: { i: number }) {
+  const c = `var(--${ART_BG[i % ART_BG.length]})`;
+  const ink = "var(--ink)";
+  const common = { fill: "none", stroke: ink, strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const art = [
+    // 0 · começar pequeno: semente que brota
+    <g key="0"><circle cx="60" cy="58" r="3.5" fill={c} /><motion.path {...common} d="M60 54 C60 44 60 40 60 34" initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} transition={{ duration: 1.1 }} /><motion.path {...common} d="M60 40 C52 38 48 32 50 27 C57 27 60 33 60 40Z M60 36 C67 34 71 28 69 23 C62 23 60 29 60 36Z" fill={c} fillOpacity=".35" initial={{ opacity: 0, scale: 0.6 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8 }} /><path {...common} d="M30 62 H90" opacity=".4" /></g>,
+    // 1 · tempo: arco de pontos
+    <g key="1">{Array.from({ length: 13 }, (_, k) => { const t = k / 12; const x = 20 + t * 80; const y = 58 - Math.sin(t * Math.PI) * 38; return <motion.circle key={k} cx={x} cy={y} r={k === 12 ? 4.5 : 2.4} fill={k === 12 ? c : ink} opacity={k === 12 ? 1 : 0.25 + t * 0.5} initial={{ scale: 0 }} whileInView={{ scale: 1 }} transition={{ delay: k * 0.07 }} />; })}</g>,
+    // 2 · autocompaixão: mãos em concha e coração
+    <g key="2"><path {...common} d="M30 50 C40 66 80 66 90 50" /><motion.path d="M60 50 C44 38 50 24 60 32 C70 24 76 38 60 50Z" fill={c} fillOpacity=".5" stroke={ink} strokeWidth="1.4" initial={{ scale: 0.85 }} animate={{ scale: [0.9, 1.05, 0.9] }} transition={{ duration: 3, repeat: Infinity }} style={{ transformOrigin: "60px 40px" }} /></g>,
+    // 3 · identidade: figura e ondas
+    <g key="3"><circle cx="60" cy="32" r="8" fill={c} fillOpacity=".5" stroke={ink} strokeWidth="1.5" /><path {...common} d="M44 62 C44 48 76 48 76 62" />{[14, 22].map((r, k) => <motion.circle key={r} cx="60" cy="32" r={r} fill="none" stroke={c} strokeWidth="1.2" initial={{ opacity: 0.6, scale: 0.8 }} animate={{ opacity: 0, scale: 1.2 }} transition={{ duration: 2.4, repeat: Infinity, delay: k * 0.9 }} style={{ transformOrigin: "60px 32px" }} />)}</g>,
+    // 4 · se-então: duas pedras ligadas
+    <g key="4"><circle cx="34" cy="48" r="9" fill={c} fillOpacity=".4" stroke={ink} strokeWidth="1.5" /><circle cx="86" cy="32" r="9" fill={c} fillOpacity=".7" stroke={ink} strokeWidth="1.5" /><motion.path {...common} d="M44 46 C58 44 66 38 76 33 M70 31 L77 33 L73 39" strokeDasharray="3 4" initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} transition={{ duration: 1 }} /></g>,
+    // 5 · autonomia: bifurcação
+    <g key="5"><path {...common} d="M60 66 V46 C60 38 40 36 34 22 M60 46 C60 38 80 36 86 22" /><circle cx="34" cy="20" r="4" fill={c} /><circle cx="86" cy="20" r="4" fill={c} fillOpacity=".4" stroke={ink} strokeWidth="1.2" /></g>,
+    // 6 · recomeço: nascer do sol
+    <g key="6"><path {...common} d="M20 56 H100 M30 62 H90 M42 68 H78" opacity=".45" /><motion.path d="M38 56 A22 22 0 0 1 82 56Z" fill={c} fillOpacity=".55" stroke={ink} strokeWidth="1.5" initial={{ y: 14, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} transition={{ duration: 1.1 }} />{[-50, -25, 0, 25, 50].map((a) => <path key={a} {...common} d={`M60 ${56 - 26} L60 ${56 - 32}`} transform={`rotate(${a} 60 56)`} opacity=".6" />)}</g>,
+    // 7 · prazer: xícara com vapor
+    <g key="7"><path {...common} d="M42 40 H78 V52 C78 62 70 66 60 66 C50 66 42 62 42 52Z" fill={c} fillOpacity=".4" /><path {...common} d="M78 44 C88 44 88 56 78 56" />{[50, 60, 70].map((x, k) => <motion.path key={x} {...common} d={`M${x} 34 C${x - 4} 28 ${x + 4} 24 ${x} 18`} animate={{ opacity: [0, 0.8, 0], y: [4, -4] }} transition={{ duration: 2.4, repeat: Infinity, delay: k * 0.5 }} />)}</g>,
+    // 8 · metas: degraus e bandeira
+    <g key="8"><path {...common} d="M22 66 H44 V54 H64 V42 H84 V30 H100" /><path {...common} d="M100 30 V16" /><motion.path d="M100 16 H112 L107 21 L112 26 H100Z" fill={c} stroke={ink} strokeWidth="1.2" animate={{ skewY: [0, 6, 0] }} transition={{ duration: 2, repeat: Infinity }} /></g>,
+    // 9 · progresso: barras que crescem
+    <g key="9">{[0, 1, 2, 3, 4].map((k) => <motion.rect key={k} x={26 + k * 16} width="9" rx="4.5" fill={c} fillOpacity={0.3 + k * 0.15} initial={{ height: 0, y: 66 }} whileInView={{ height: 12 + k * 9, y: 66 - (12 + k * 9) }} transition={{ delay: k * 0.12, type: "spring", stiffness: 140, damping: 16 }} />)}</g>,
+  ];
+  return (
+    <svg viewBox="0 0 120 76" className="h-full w-full" aria-hidden>
+      {art[i % art.length]}
+    </svg>
+  );
+}
+
+function PrincipleCard({ p, i }: { p: (typeof PRINCIPLES)[number]; i: number }) {
+  const [open, setOpen] = useState(false);
+  const first = p.text.split(/(?<=\.)\s/)[0];
+  return (
+    <li className="overflow-hidden rounded-3xl border border-line">
+      <div className="h-24" style={{ background: `color-mix(in srgb, var(--${ART_BG[i % ART_BG.length]}) 14%, transparent)` }}>
+        <Art i={i} />
+      </div>
+      <div className="p-4">
+        <h4 className="font-display text-lg leading-tight">{p.title}</h4>
+        <p className="mt-1.5 text-[14px] leading-snug text-muted">{first}</p>
+        <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="mt-1 min-h-11 text-[13px] underline underline-offset-2">
+          {open ? "Menos" : "Saber mais"}
+        </button>
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+              <p className="text-[14px] leading-relaxed text-muted">{p.text.slice(first.length).trim()}</p>
+              <p className="mt-2.5 text-[13px] leading-snug">{p.where}</p>
+              <p className="mt-2 text-[12px] italic text-muted">{p.source}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </li>
+  );
+}
+
+/** Tela "Sobre": imagem primeiro, pouco texto; a ciência fica em cartões que se abrem. */
 export function AboutSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <Sheet open={open} onClose={onClose} title={`Sobre o ${APP_NAME}`}>
       <div className="flex flex-col gap-7 pb-2">
-        <div className="flex flex-col items-center gap-3 pt-1 text-center">
-          <svg viewBox="0 0 120 120" width="120" height="120" aria-label="Círculo enso, desenhado em um só gesto" role="img">
-            <motion.path
-              d="M60 14 C 90 12, 108 36, 104 62 C 100 90, 74 108, 48 102 C 24 96, 10 74, 16 50 C 20 34, 32 22, 48 17"
-              fill="none"
-              stroke="var(--ink)"
-              strokeWidth="7"
-              strokeLinecap="round"
-              initial={{ pathLength: 0, opacity: 0.2 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 2.2, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </svg>
-          <p className="font-display text-2xl">{APP_NAME}</p>
+        <div className="flex flex-col items-center gap-2 text-center">
+          <EnsoMark size={132} />
+          <p className="font-display text-3xl">{APP_NAME}</p>
           <p className="text-sm text-muted">{APP_TAGLINE}</p>
+          <div className="mt-1 flex gap-2">
+            <button type="button" onClick={() => speakEnso("pt")} className="flex min-h-11 items-center gap-1.5 rounded-full border border-line px-4 text-sm">
+              <span aria-hidden>🔊</span> Ên-sô
+            </button>
+            <button type="button" onClick={() => speakEnso("ja")} className="flex min-h-11 items-center gap-1.5 rounded-full border border-line px-4 text-sm text-muted">
+              <span aria-hidden>🔊</span> 円相 · em japonês
+            </button>
+          </div>
         </div>
 
-        <section className="flex flex-col gap-2">
-          <h3 className="text-sm text-muted">A ideia</h3>
-          <p className="text-[15px] leading-relaxed">
-            O {APP_NAME} é um app de hábitos feito para quem já se cobrou demais. Em vez de sequências que viram
-            pressão, ele trabalha com mínimos possíveis, dias difíceis, pausas planejadas e recomeços sem culpa.
-            Você acompanha o que importa, vê seu progresso com honestidade e cresce no seu ritmo.
-          </p>
-          <p className="text-[15px] leading-relaxed">
-            Tudo fica no seu aparelho: sem conta, sem servidor, sem anúncios.
-          </p>
-        </section>
+        <ul className="grid grid-cols-3 gap-2 text-center">
+          {[
+            { e: "🌱", t: "Mínimos possíveis" },
+            { e: "🫶", t: "Recomeço sem culpa" },
+            { e: "🔒", t: "Tudo no seu aparelho" },
+          ].map((x) => (
+            <li key={x.t} className="rounded-2xl bg-surface-2 px-2 py-4">
+              <span className="text-3xl" aria-hidden>{x.e}</span>
+              <span className="mt-2 block text-[13px] leading-tight">{x.t}</span>
+            </li>
+          ))}
+        </ul>
 
-        <section className="flex flex-col gap-2">
-          <h3 className="text-sm text-muted">Por que &ldquo;{APP_NAME}&rdquo;</h3>
-          <p className="text-[15px] leading-relaxed">
-            Enso (円相) é o círculo da caligrafia zen, desenhado num único gesto e quase sempre deixado levemente
-            aberto. A abertura lembra que a imperfeição é aceita: o hábito não precisa ser perfeito, só precisa
-            continuar. O círculo que você viu se desenhando acima é a imagem do app: constância sem rigidez.
-          </p>
-        </section>
+        <p className="text-center text-[15px] leading-relaxed">
+          Enso é o círculo zen feito num gesto só e deixado aberto. O recado: <b className="font-medium">constância sem rigidez</b>.
+        </p>
 
         <section className="flex flex-col gap-3">
           <h3 className="text-sm text-muted">A ciência por trás</h3>
-          <p className="text-[13px] leading-snug text-muted">
-            Cada decisão do app tem uma razão na pesquisa sobre hábitos. Para cada princípio, você vê onde ele aparece
-            no app e a fonte para conferir. Os guias da aba Aprender aprofundam vários deles.
-          </p>
           <ul className="flex flex-col gap-3">
-            {PRINCIPLES.map((p) => (
-              <li key={p.title} className="rounded-2xl border border-line p-4">
-                <h4 className="font-display text-lg leading-tight">{p.title}</h4>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{p.text}</p>
-                <p className="mt-2.5 text-[13px] leading-snug">{p.where}</p>
-                <p className="mt-2 text-[12px] italic text-muted">{p.source}</p>
-              </li>
+            {PRINCIPLES.map((p, i) => (
+              <PrincipleCard key={p.title} p={p} i={i} />
             ))}
           </ul>
           <p className="text-[12px] leading-snug text-muted">
-            O {APP_NAME} é uma ferramenta de apoio e não substitui acompanhamento profissional. Se você está
-            passando por um momento muito pesado, conversar com alguém de confiança ou com um profissional de
-            saúde pode ajudar.
+            O {APP_NAME} é uma ferramenta de apoio e não substitui acompanhamento profissional.
           </p>
         </section>
       </div>

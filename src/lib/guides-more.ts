@@ -91,7 +91,7 @@ export const MORE_GUIDES: Guide[] = [
       "Sweller, J., Cooper, G. A. (1985). The use of worked examples as a substitute for problem solving in learning algebra. Cognition and Instruction, 2(1), 59–89.",
     ],
     enso: "Transforme o estudo em hábito de “produzir algo”: o modelo Projeto pede um pequeno passo por dia, e o diário registra o que você construiu.",
-    tryHabit: "projeto",
+    tryHabit: "estudo",
   },
   {
     id: "cerebro-preve",
@@ -181,7 +181,7 @@ export const MORE_GUIDES: Guide[] = [
       "Mellers, B., et al. (2014). Psychological strategies for winning a geopolitical forecasting tournament. Psychological Science, 25(5), 1106–1115.",
     ],
     enso: "Use o diário para registrar uma previsão por semana e a confiança que você tem nela.",
-    tryHabit: "planejar",
+    tryHabit: "escrever",
   },
   {
     id: "marshmallow",

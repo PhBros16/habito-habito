@@ -11,7 +11,7 @@ import {
 } from "react";
 import * as store from "./db";
 import { pausedFn } from "./pauses";
-import { SEED_KEYS, TEMPLATES, type HabitTemplate } from "./templates";
+import type { HabitTemplate } from "./templates";
 import {
   defaultSettings,
   entryId,
@@ -31,6 +31,8 @@ interface Ctx {
   setValue: (habitId: string, date: string, value: number) => void;
   addHabit: (t: HabitTemplate) => void;
   removeHabit: (id: string) => void;
+  /** Define a ordem dos hábitos ativos (ids na ordem desejada). */
+  reorderHabits: (ids: string[]) => void;
   updateHabit: (id: string, patch: Partial<Habit>) => void;
   settings: Settings;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -67,20 +69,13 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const data = await store.loadAll();
-        let loadedHabits = data.habits;
+        const loadedHabits = data.habits;
         let loadedSettings = { ...defaultSettings, ...(data.settings ?? {}) };
 
-        if (!loadedSettings.seeded && loadedHabits.length === 0) {
-          const now = new Date().toISOString();
-          loadedHabits = SEED_KEYS.map((key, i) => {
-            const t = TEMPLATES.find((x) => x.key === key)!.habit;
-            return { ...t, id: uid(), createdAt: now, order: i };
-          });
-          loadedSettings = { ...loadedSettings, seeded: true };
-          await Promise.all([
-            ...loadedHabits.map(store.saveHabit),
-            store.saveSettings(loadedSettings),
-          ]);
+        // Quem já tem hábitos não passa pela apresentação inicial.
+        if (!loadedSettings.onboarded && loadedHabits.length > 0) {
+          loadedSettings = { ...loadedSettings, onboarded: true };
+          store.saveSettings(loadedSettings).catch(() => {});
         }
 
         if (cancelled) return;
@@ -157,6 +152,18 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       const next: Habit = { ...cur, ...patch, id: cur.id, createdAt: cur.createdAt, order: cur.order };
       setHabits(habits.map((h) => (h.id === id ? next : h)));
       store.saveHabit(next).catch(() => {});
+    },
+    [habits]
+  );
+
+  const reorderHabits = useCallback(
+    (ids: string[]) => {
+      const pos = new Map(ids.map((id, i) => [id, i]));
+      const next = habits.map((h) => (pos.has(h.id) ? { ...h, order: pos.get(h.id)! } : h));
+      setHabits(next);
+      next.forEach((h, i) => {
+        if (h.order !== habits[i].order) store.saveHabit(h).catch(() => {});
+      });
     },
     [habits]
   );
@@ -268,6 +275,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       setValue,
       addHabit,
       removeHabit,
+      reorderHabits,
       updateHabit,
       settings,
       updateSettings,
@@ -280,7 +288,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       endPause,
       removePause,
     }),
-    [ready, sorted, getValue, setValue, addHabit, removeHabit, updateHabit, checkins, settings, updateSettings, exportJson, getCheckin, setCheckin, isPaused, addPause, endPause, removePause]
+    [ready, sorted, getValue, setValue, addHabit, removeHabit, reorderHabits, updateHabit, checkins, settings, updateSettings, exportJson, getCheckin, setCheckin, isPaused, addPause, endPause, removePause]
   );
 
   return <HabitsContext.Provider value={value}>{children}</HabitsContext.Provider>;

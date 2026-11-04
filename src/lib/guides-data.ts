@@ -180,7 +180,7 @@ const BASE_GUIDES: Guide[] = [
       "Ericsson, K. A., Krampe, R. T., Tesch-Römer, C. (1993). The role of deliberate practice in the acquisition of expert performance. Psychological Review, 100(3), 363–406.",
       "Macnamara, B. N., Hambrick, D. Z., Oswald, F. L. (2014). Deliberate practice and performance in music, games, sports, education, and professions: A meta-analysis. Psychological Science, 25(8), 1608–1618.",
     ],
-    tryHabit: "projeto",
+    tryHabit: "estudo",
   },
   {
     id: "meditacao",
@@ -213,7 +213,7 @@ const BASE_GUIDES: Guide[] = [
       "Hölzel, B. K. et al. (2011). Mindfulness practice leads to increases in regional brain gray matter density. Psychiatry Research: Neuroimaging, 191(1), 36–43.",
       "Lindahl, J. R. et al. (2017). The varieties of contemplative experience: A mixed-methods study of meditation-related challenges in Western Buddhists. PLoS ONE, 12(5), e0176239.",
     ],
-    tryHabit: "meditar",
+    tryHabit: "meditacao",
   },
   {
     id: "memoria",
@@ -285,7 +285,7 @@ const BASE_GUIDES: Guide[] = [
       "Woollett, K., Maguire, E. A. (2011). Acquiring “the Knowledge” of London's layout drives structural brain changes. Current Biology, 21(24), 2109–2114.",
       "Draganski, B. et al. (2004). Neuroplasticity: Changes in grey matter induced by training. Nature, 427, 311–312.",
     ],
-    tryHabit: "idioma",
+    tryHabit: "estudo",
   },
   {
     id: "procrastinacao",
@@ -417,7 +417,7 @@ const BASE_GUIDES: Guide[] = [
       "Balban, M. Y. et al. (2023). Brief structured respiration practices enhance mood and reduce physiological arousal. Cell Reports Medicine, 4(1), 100895.",
       "Zaccaro, A. et al. (2018). How breath-control can change your life: A systematic review on psycho-physiological correlates of slow breathing. Frontiers in Human Neuroscience, 12, 353.",
     ],
-    tryHabit: "meditar",
+    tryHabit: "meditacao",
   },
   {
     id: "lentes-e-reavaliacao",
@@ -529,7 +529,7 @@ const BASE_GUIDES: Guide[] = [
       "Hagger, M. S. et al. (2016). A multilab preregistered replication of the ego-depletion effect. Perspectives on Psychological Science, 11(4), 546–573.",
       "Klein, G. (2007). Performing a project premortem. Harvard Business Review, 85(9), 18–19.",
     ],
-    tryHabit: "planejar",
+    tryHabit: "escrever",
   },
   {
     id: "genes-e-hab",
